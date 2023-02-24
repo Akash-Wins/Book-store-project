@@ -30,7 +30,7 @@ export interface IRegisterBookResponse extends IResponse {
 
 export interface IGetBookRequest {
   _id?: string;
-  sellerId?: string;
+  shopId?: string;
 }
 export interface IGetBookResponse extends IResponse {
   book?: IBook;

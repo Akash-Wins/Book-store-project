@@ -3,9 +3,11 @@ import { IResponse } from "../../utils/interface/common";
 
 export interface ICartServiceAPI {
   createCart(request: IRegisterCartRequest): Promise<IRegisterCartResponse>;
-//   get(request: IGetBookRequest): Promise<IGetBookResponse>;
-//   getAllBooks(request: IGetBookRequest): Promise<IGetBookResponse>;
-//   delete(request: IDeleteBookRequest): Promise<IDeleteBookResponse>;
+  delete(request: IDeleteCartRequest): Promise<IDeleteCartResponse>;
+  get(request: IGetCartRequest): Promise<IGetCartResponse>;
+  getAllCart(request: IGetCartRequest): Promise<IGetCartResponse>;
+  // update(request: IUpdateCartRequest): Promise<IUpdateCartResponse>;
+  
 }
 
 /********************************************************************************
@@ -16,7 +18,7 @@ export interface IRegisterCartRequest {
   bookId: string;
   shopId?: string; 
   sellerId?: string;
-  userId?: string;
+  buyerId?: string;
   quantity: number;
 }
 
@@ -24,27 +26,43 @@ export interface IRegisterCartResponse extends IResponse {
   cart?: ICart;
 }
 
+/********************************************************************************
+ *  Update Cart
+ ********************************************************************************/
+
+ export interface IUpdateCartRequest {
+  _id: string;
+}
+export interface IUpdateCartResponse extends IResponse {
+  cart?: ICart;
+}
+
+
+/********************************************************************************
+ * Delete Cart
+ ********************************************************************************/
+ export interface IDeleteCartRequest {
+  cartId?: string;
+  buyerId: string
+}
+
+export interface IDeleteCartResponse extends IResponse {
+  success?: boolean;
+}
+
 // /********************************************************************************
 //  *  Get Book
 //  ********************************************************************************/
 
-// export interface IGetBookRequest {
-//   _id?: string;
-//   sellerId?: string;
-// }
-// export interface IGetBookResponse extends IResponse {
-//   book?: IBook;
-// }
+export interface IGetCartRequest {
+  _id?: string;
+  shopId?: string;
+  sellerId?: string
+  buyerId?: string;
+}
+export interface IGetCartResponse extends IResponse {
+  cart?: ICart;
+}
 
-// /********************************************************************************
-//  * Delete Shop
-//  ********************************************************************************/
-//  export interface IDeleteBookRequest {
-//   _id?: string;
-//   userId: string
-// }
 
-// export interface IDeleteBookResponse extends IResponse {
-//   success?: boolean;
-// }
 

@@ -10,7 +10,7 @@ export interface IShopServiceAPI {
 }
 
 /********************************************************************************
- *  Create user
+ *  Create Shop
  ********************************************************************************/
 export interface IRegisterShopRequest {
   sellerId?: string; 

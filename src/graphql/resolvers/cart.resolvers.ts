@@ -7,63 +7,65 @@ import { useAuthValidator } from "../../utils/middlewares/useauthvalidator";
 
 export default {
   Query: {
-    // async getBook(parent, args) {
-    //   const { _id } = args;
-    //   const request: IBookService.IGetBookRequest = {
-    //     _id,
-    //   };
-    //   let response: IBookService.IGetBookResponse;
-    //   try {
-    //     response = await proxy.book.get(request);
-    //     if (response.status !== STATUS_CODES.OK) {
-    //       throw new ApolloError(
-    //         response.error.message,
-    //         response.status.toString()
-    //       );
-    //     }
-    //   } catch (e) {
-    //     throw e;
-    //   }
-    //   return response?.book;
-    // },
+    async getCart(parent, args, context) {
+      useAuthValidator(context);  
+      const { _id } = args;
+      const request: ICartService.IGetCartRequest = {
+        _id,
+      };
+      let response: ICartService.IGetCartResponse;
+      try {
+        response = await proxy.cart.get(request);
+        if (response.status !== STATUS_CODES.OK) {
+          throw new ApolloError(
+            response.error.message,
+            response.status.toString()
+          );
+        }
+      } catch (e) {
+        throw e;
+      }
+      return response?.cart;
+    },
 
-    // async getAllBooks(parent, args, context) {
-    //     const { sellerId } = args;
-    //     const request: IBookService.IGetBookRequest = {
-    //       sellerId
-    //     };
-    //     let response: IBookService.IGetBookResponse;
+    async getAllCart(parent, args, context) {
+        useAuthValidator(context);  
+        const { id } = context.req.user;
+        const { shopId } = args;
+        const request: ICartService.IGetCartRequest = {
+          shopId,
+          sellerId:id
+        };
+        let response: ICartService.IGetCartResponse;
       
-    //     try {
-    //       response = await proxy.book.getAllBooks(request);
-    //       if (response.status !== STATUS_CODES.OK) {
-    //         throw new ApolloError(
-    //           response.error.message,
-    //           response.status.toString()
-    //         );
-    //       }
-    //     } catch (e) {
-    //       throw e;
-    //     }
-    //     return response.book;
-    //   },  
+        try {
+          response = await proxy.cart.getAllCart(request);
+          if (response.status !== STATUS_CODES.OK) {
+            throw new ApolloError(
+              response.error.message,
+              response.status.toString()
+            );
+          }
+        } catch (e) {
+          throw e;
+        }
+        return response.cart;
+      },  
   },
 
   Mutation: {
     async registerCart(parent, args,context) {
       useAuthValidator(context);  
       const { id } = context.req.user;
-      console.log(args,"*******args***************")
       const {
-        cart: { bookId, shopId, quantity , sellerId },
+        cart: { bookId, shopId, quantity },
       } = args;
 
       const request: ICartService.IRegisterCartRequest = {
         bookId,
         quantity, 
         shopId,
-        sellerId,
-        userId:id
+        buyerId:id
       };
 
       let response: ICartService.IRegisterCartResponse
@@ -82,29 +84,29 @@ export default {
       return response.cart;
     },
 
-    // async deleteBook(parent, args, context) {
-    //   useAuthValidator(context);
-    //   const {id} = context.req.user
-    //   const {
-    //     book: { _id},
-    //   } = args;
-    //   const request: IBookService.IDeleteBookRequest = {
-    //     _id,
-    //     userId:id
-    //   };
-    //   let response: IBookService.IDeleteBookResponse;
-    //   try {
-    //     response = await proxy.book.delete(request);
-    //     if (response.status !== STATUS_CODES.OK) {
-    //       throw new ApolloError(
-    //         response.error.message,
-    //         response.status.toString()
-    //       );
-    //     }
-    //   } catch (e) {
-    //     throw e;
-    //   }
-    //   return response;
-    // },
+    async deleteCart(parent, args, context) {
+      useAuthValidator(context);
+      const {id} = context.req.user
+      const {
+         cartId
+      } = args;
+      const request: ICartService.IDeleteCartRequest = {
+        cartId,
+        buyerId:id
+      };
+      let response: ICartService.IDeleteCartResponse;
+      try {
+        response = await proxy.cart.delete(request);
+        if (response.status !== STATUS_CODES.OK) {
+          throw new ApolloError(
+            response.error.message,
+            response.status.toString()
+          );
+        }
+      } catch (e) {
+        throw e;
+      }
+      return response;
+    },
   },
 };

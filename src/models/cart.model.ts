@@ -7,11 +7,7 @@ export default {
     required: true,
     default: shortid.generate,
   },
-  sellerId: {
-    type: String,
-    required: false,
-  },
-  userId:{
+  buyerId:{
     type: String,
     required: false,
   },

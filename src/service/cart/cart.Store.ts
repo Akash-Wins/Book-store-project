@@ -16,7 +16,7 @@ export default class CartStore {
   };
 
   /**
-   * creating new book and saving in Database
+   * creating new cart and saving in Database
    */
   async createCart(cartInput: ICart): Promise<ICart> {
     const cart = new Cart(cartInput);
@@ -30,42 +30,53 @@ export default class CartStore {
   }
 
   /**
-   * Get book list
+   *Delete Cart
    */
-//    public async getAll(sellerId: string): Promise<IBook> {
-//     let book;
-//     try {
-//         book = await Book.find({ sellerId },).lean();
-//     } catch (e) {
-//       return Promise.reject(new BookStore.OPERATION_UNSUCCESSFUL());
-//     }
-//     return book;
-//   }
+   public async delete(_id: string): Promise<any> {
+    try {
+      return await Cart.deleteOne({ _id });
+    } catch (e) {
+      return Promise.reject(new CartStore.OPERATION_UNSUCCESSFUL());
+    }
+  }
 
-//   /**
-//    *Get by attributes in object form
-//    */
-//   public async getByAttributes(attributes: object): Promise<IBook> {
-//     try {
-//       return await Book.findOne(attributes).lean();
-//     } catch (e) {
-//       return Promise.reject(new BookStore.OPERATION_UNSUCCESSFUL());
-//     }
-//   }
+  /**
+   * Get Cart list
+   */
+   public async getAll(shopId: string): Promise<ICart> {
+    let cart;
+    try {
+      cart = await Cart.find({ shopId },).lean();
+    } catch (e) {
+      return Promise.reject(new CartStore.OPERATION_UNSUCCESSFUL());
+    }
+    return cart;
+  }
 
-//   /**
-//    * updating book
-//    */
-//   public async update(_id: string,attributes: object): Promise<IBook> {
-//     try {
-//       const updateBook = await Book.findByIdAndUpdate(
-//         { _id },
-//         { $set: attributes },
-//         { upsert: true, new: true }
-//       ).lean();
-//       return updateBook;
-//     } catch (e) {
-//       return Promise.reject(new BookStore.OPERATION_UNSUCCESSFUL());
-//     }
-//   }
+  /**
+   *Get by attributes in object form
+   */
+  public async getByAttributes(attributes: object): Promise<ICart> {
+    try {
+      return await Cart.findOne(attributes).lean();
+    } catch (e) {
+      return Promise.reject(new CartStore.OPERATION_UNSUCCESSFUL());
+    }
+  }
+
+  /**
+   * updating Cart
+   */
+  public async update(_id: string,attributes: object): Promise<ICart> {
+    try {
+      const updateCart = await Cart.findByIdAndUpdate(
+        { _id },
+        { $set: attributes },
+        { upsert: true, new: true }
+      ).lean();
+      return updateCart;
+    } catch (e) {
+      return Promise.reject(new CartStore.OPERATION_UNSUCCESSFUL());
+    }
+  }
 }

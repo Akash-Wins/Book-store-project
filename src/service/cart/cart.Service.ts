@@ -33,8 +33,7 @@ export default class CartService implements ICartService.ICartServiceAPI {
       quantity: Joi.number().required(),
       bookId: Joi.string().required(),
       shopId: Joi.string().required(),
-      sellerId:Joi.string().required(),
-      userId: Joi.string().required()
+      buyerId: Joi.string().required()
     });
 
     const params = schema.validate(request);
@@ -46,13 +45,13 @@ export default class CartService implements ICartService.ICartServiceAPI {
       return response;
     }
 
-    const { shopId, bookId, quantity, sellerId, userId } = params.value;
+    const { shopId, bookId, quantity, buyerId } = params.value;
 
     let validOrderCheck: IBook;
     try {
-      validOrderCheck = await this.bookStore.getByAttributes({shopId: shopId,sellerId:sellerId,});
-      //shop check of seller
-      if (!validOrderCheck) {
+      validOrderCheck = await this.bookStore.getByAttributes({_id:bookId,shopId});
+      //cart check of buyer
+      if (!validOrderCheck || quantity > validOrderCheck.quantity ) {
         const errorMsg = ErrorMessageEnum.INVALID_CREDENTIALS;
         response.status = STATUS_CODES.BAD_REQUEST;
         response.error = toError(errorMsg);
@@ -64,35 +63,16 @@ export default class CartService implements ICartService.ICartServiceAPI {
       response.error = toError(e.message);
       return response;
     }
-    // // Check if book is already registered
-    // let existingBook: IBook;
-    // try {
-    //   existingBook = await this.bookStore.getByAttributes({ bookName });
 
-    //   //Error if book is already exist
-    //   if (existingBook && existingBook?.bookName) {
-    //     const errorMsg = ErrorMessageEnum.BOOK_ALREADY_EXIST;
-    //     response.status = STATUS_CODES.BAD_REQUEST;
-    //     response.error = toError(errorMsg);
-    //     return response;
-    //   }
-    // } catch (e) {
-    //   console.error(e);
-    //   response.status = STATUS_CODES.INTERNAL_SERVER_ERROR;
-    //   response.error = toError(e.message);
-    //   return response;
-    // }
-
-    //Save the book to storage
+    //Save the cart to storage
     const attributes: ICart = {
       quantity,
       bookId,
       shopId,
-      sellerId,
-      userId,
+      buyerId:buyerId,
       meta:{
         createdAt:Date.now(),
-        createdBy:userId
+        createdBy:buyerId
       }
     };
 
@@ -111,152 +91,154 @@ export default class CartService implements ICartService.ICartServiceAPI {
     return response;
   };
 
-//   /**
-//    * Get book by Id
-//    */
-//   public get = async (
-//     request: IBookService.IGetBookRequest
-//   ): Promise<IBookService.IGetBookResponse> => {
-//     const response: IBookService.IGetBookResponse = {
-//       status: STATUS_CODES.UNKNOWN_CODE,
-//     };
 
-//     const schema = Joi.object().keys({
-//       _id: Joi.string().required(),
-//     });
+  /**
+   * Delete Cart
+   */
+   public delete = async (
+    request: ICartService.IDeleteCartRequest
+  ): Promise<ICartService.IDeleteCartResponse> => {
+    const response: ICartService.IDeleteCartResponse = {
+      status: STATUS_CODES.UNKNOWN_CODE,
+    };
+    const schema = Joi.object().keys({
+      cartId: Joi.string().required(),
+      buyerId: Joi.string().required(),
+    });
+    const params = schema.validate(request);
 
-//     const params = schema.validate(request);
+    if (params.error) {
+      console.error(params.error);
+      response.status = STATUS_CODES.UNPROCESSABLE_ENTITY;
+      response.error = toError(params.error.details[0].message);
+      return response;
+    }
+    const { cartId ,buyerId} = params.value;
 
-//     if (params.error) {
-//       console.error(params.error);
-//       response.status = STATUS_CODES.UNPROCESSABLE_ENTITY;
-//       response.error = toError(params.error.details[0].message);
-//       return response;
-//     }
+    //exists cart
+    let cart;
+    try {
+      cart = await this.cartStore.getByAttributes({_id: cartId, buyerId:buyerId});  
 
-//     const { _id } = params.value;
-//     let book: IBook;
-//     try {
-//       book = await this.bookStore.getByAttributes({ _id });
+      // check for cart exist
+      if (!cart) {
+        const errorMsg = ErrorMessageEnum.RECORD_NOT_FOUND;
+        response.status = STATUS_CODES.NOT_FOUND;
+        response.error = toError(errorMsg);
+        return response;
+      }
+    } catch (e) {
+      console.error(e);
+      response.status = STATUS_CODES.INTERNAL_SERVER_ERROR;
+      response.error = toError(e.message);
+      return response;
+    }
+    try {
+      await this.cartStore.delete(cartId);
+    } catch (e) {
+      console.error(e);
+      response.status = STATUS_CODES.INTERNAL_SERVER_ERROR;
+      response.error = toError(e.message);
+      return response;
+    }
+    response.status = STATUS_CODES.OK;
+    response.success = true;
+    return response;
+  };
 
-//       //if book's id is incorrect
-//       if (!book) {
-//         const errorMsg = ErrorMessageEnum.INVALID_BOOK_ID;
-//         response.status = STATUS_CODES.BAD_REQUEST;
-//         response.error = toError(errorMsg);
-//         return response;
-//       }
-//     } catch (e) {
-//       console.error(e);
-//       response.status = STATUS_CODES.INTERNAL_SERVER_ERROR;
-//       response.error = toError(e.message);
-//       return response;
-//     }
-//     response.status = STATUS_CODES.OK;
-//     response.book = book;
-//     return response;
-//   };
+  /**
+   * Get cart by Id
+   */
+  public get = async (
+    request: ICartService.IGetCartRequest
+  ): Promise<ICartService.IGetCartResponse> => {
+    const response: ICartService.IGetCartResponse = {
+      status: STATUS_CODES.UNKNOWN_CODE,
+    };
 
-//   /**
-//    * Get All Books
-//    */
-//   public getAllBooks = async (
-//     request: IBookService.IGetBookRequest
-//   ): Promise<IBookService.IGetBookResponse> => {
-//     const response: IBookService.IGetBookResponse = {
-//       status: STATUS_CODES.UNKNOWN_CODE,
-//     };
-//     const schema = Joi.object().keys({
-//       sellerId: Joi.string().required(),
-//     });
+    const schema = Joi.object().keys({
+      _id: Joi.string().required(),
+    });
 
-//     const params = schema.validate(request);
+    const params = schema.validate(request);
 
-//     if (params.error) {
-//       console.error(params.error);
-//       response.status = STATUS_CODES.UNPROCESSABLE_ENTITY;
-//       response.error = toError(params.error.details[0].message);
-//       return response;
-//     }
+    if (params.error) {
+      console.error(params.error);
+      response.status = STATUS_CODES.UNPROCESSABLE_ENTITY;
+      response.error = toError(params.error.details[0].message);
+      return response;
+    }
 
-//     const { sellerId } = params.value;
+    const { _id } = params.value;
+    let cart: ICart;
+    try {
+      cart = await this.cartStore.getByAttributes({ _id });
+
+      //if cart's id is incorrect
+      if (!cart) {
+        const errorMsg = ErrorMessageEnum.RECORD_NOT_FOUND;
+        response.status = STATUS_CODES.NOT_FOUND;
+        response.error = toError(errorMsg);
+        return response;
+      }
+    } catch (e) {
+      console.error(e);
+      response.status = STATUS_CODES.INTERNAL_SERVER_ERROR;
+      response.error = toError(e.message);
+      return response;
+    }
+    response.status = STATUS_CODES.OK;
+    response.cart = cart;
+    return response;
+  };
+
+    /**
+   * Get All Cart
+   */
+  public getAllCart = async (
+    request: ICartService.IGetCartRequest
+  ): Promise<ICartService.IGetCartResponse> => {
+    const response: ICartService.IGetCartResponse = {
+      status: STATUS_CODES.UNKNOWN_CODE,
+    };
+    const schema = Joi.object().keys({
+      shopId: Joi.string().required(),
+      sellerId: Joi.string().required()
+    });
+
+    const params = schema.validate(request);
+
+    if (params.error) {
+      console.error(params.error);
+      response.status = STATUS_CODES.UNPROCESSABLE_ENTITY;
+      response.error = toError(params.error.details[0].message);
+      return response;
+    }
+
+    const { shopId, sellerId } = params.value;
   
-//     let book:IBook;
-//     try {
-//       book = await this.bookStore.getAll(sellerId);
-//     } catch (e) {
-//       console.error(e);
-//       response.status = STATUS_CODES.INTERNAL_SERVER_ERROR;
-//       response.error = e;
-//       return response;
-//     }
-//     response.status = STATUS_CODES.OK;
-//     response.book = book;
-//     return response;
-//   };
+    let cart:ICart;
 
-//    /**
-//    * Delete Book
-//    */
-//     public delete = async (
-//       request: IBookService.IDeleteBookRequest
-//     ): Promise<IBookService.IDeleteBookResponse> => {
-//       const response: IBookService.IDeleteBookResponse = {
-//         status: STATUS_CODES.UNKNOWN_CODE,
-//       };
-//       const schema = Joi.object().keys({
-//         _id: Joi.string().required(),
-//         userId: Joi.string().required(),
-//       });
-//       const params = schema.validate(request);
-  
-//       if (params.error) {
-//         console.error(params.error);
-//         response.status = STATUS_CODES.UNPROCESSABLE_ENTITY;
-//         response.error = toError(params.error.details[0].message);
-//         return response;
-//       }
-//       const { userId , _id} = params.value;
-//       //exists book
-//       let book: IBook;
-//       // let user;
-//       try {
-//         book = await this.bookStore.getByAttributes({ _id:_id, isDeleted:false });
+    try {
+      const sellerCheck = await this.bookStore.getByAttributes({shopId,sellerId:sellerId})
+      cart = await this.cartStore.getAll(shopId);
+      
+      if(!sellerCheck){
+        const errorMsg = ErrorMessageEnum.INVALID_CREDENTIALS;
+        response.status = STATUS_CODES.BAD_REQUEST;
+        response.error = toError(errorMsg);
+        return response;
+      }
 
-//         // check for book exist
-//         if (!book ) {
-//           const errorMsg = ErrorMessageEnum.RECORD_NOT_FOUND;
-//           response.status = STATUS_CODES.BAD_REQUEST;
-//           response.error = toError(errorMsg);
-//           return response;
-//         }
-
-//         if(book.sellerId !== userId){
-//           const errorMsg = ErrorMessageEnum.INVALID_CREDENTIALS;
-//           response.status = STATUS_CODES.UNAUTHORIZED;
-//           response.error = toError(errorMsg);
-//           return response;
-//         }
-
-//       } catch (e) {
-//         console.error(e);
-//         response.status = STATUS_CODES.INTERNAL_SERVER_ERROR;
-//         response.error = toError(e.message);
-//         return response;
-//       }
-
-//       try {
-//         await this.bookStore.update(book._id, { isDeleted:true});
-//       } catch (e) {
-//         console.error(e);
-//         response.status = STATUS_CODES.INTERNAL_SERVER_ERROR;
-//         response.error = toError(e.message);
-//         return response;
-//       }
-  
-//       response.status = STATUS_CODES.OK;
-//       response.success = true;
-//       return response;
-//     };
+    } catch (e) {
+      console.error(e);
+      response.status = STATUS_CODES.INTERNAL_SERVER_ERROR;
+      response.error = e;
+      return response;
+    }
+    response.status = STATUS_CODES.OK;
+    response.cart = cart;
+    return response;
+  };
 
 }

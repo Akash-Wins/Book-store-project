@@ -1,4 +1,4 @@
-import Joi, { date } from "joi";
+import Joi from "joi";
 import ShopStore from "./shop.Store";
 import IShop from "../../utils/interface/IShop";
 import STATUS_CODES from "../../utils/enum/StatusCodesEnum";
@@ -9,13 +9,10 @@ import { toError } from "../../utils/interface/common";
 import IUser from "src/utils/interface/IUser";
 import UserStore from "../user/user.Store";
 import { Role } from "../../utils/enum/roleEnum";
-import BookStore from "../book/book.Store";
-import IBook from "../../utils/interface/IBook";
 
 export default class ShopService implements IShopService.IShopServiceAPI {
   private shopStore = new ShopStore();
   private userStore = new UserStore();
-  private bookStore = new BookStore();
   private proxy: IAppServiceProxy;
 
   constructor(proxy: IAppServiceProxy) {
@@ -299,15 +296,8 @@ export default class ShopService implements IShopService.IShopServiceAPI {
       return response;
     }
     
-    let book
     try {
       shop = await this.shopStore.update(shop._id, { isActive: false });
-      // if(!shop?.isActive == false )
-      // book = await this.bookStore.getAll(_id)
-      // const bookDelete = book.map((x)=>{
-      //   return x.isDeleted.push(true)
-      // })
-
     } catch (e) {
       console.error(e);
       response.status = STATUS_CODES.INTERNAL_SERVER_ERROR;

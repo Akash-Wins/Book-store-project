@@ -68,15 +68,14 @@ export default class BookService implements IBookService.IBookServiceAPI {
     // Check if book is already registered
     let existingBook: IBook;
     try {
-      existingBook = await this.bookStore.getByAttributes({ bookName });
-
+      existingBook = await this.bookStore.getByAttributes({ bookName,shopId });
       //Error if book is already exist
-      if (existingBook && existingBook?.bookName) {
-        const errorMsg = ErrorMessageEnum.BOOK_ALREADY_EXIST;
-        response.status = STATUS_CODES.BAD_REQUEST;
-        response.error = toError(errorMsg);
-        return response;
-      }
+        if (existingBook && existingBook?.bookName) {
+          const errorMsg = ErrorMessageEnum.BOOK_ALREADY_EXIST;
+          response.status = STATUS_CODES.BAD_REQUEST;
+          response.error = toError(errorMsg);
+          return response;
+        }
     } catch (e) {
       console.error(e);
       response.status = STATUS_CODES.INTERNAL_SERVER_ERROR;

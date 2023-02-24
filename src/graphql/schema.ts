@@ -91,6 +91,7 @@ const typeDefs = gql`
   ######################################################################
 
   type Cart {
+    bookId: String
     price: Int
     quantity: Int
     shopId: String
@@ -99,7 +100,6 @@ const typeDefs = gql`
   input CartInput {
     quantity: Int
     shopId: String
-    sellerId: String
     bookId: String
   }
 
@@ -114,11 +114,15 @@ const typeDefs = gql`
 
     #Book
     getBook(_id: String!): Book
-    getAllBooks(sellerId: String!):[Book]
+    getAllBooks(shopId: String!):[Book]
 
     #Shop
     getShop(_id: String!): Shop
     getAllShops: [Shop]
+
+    #Cart
+    getCart(_id: String!): Cart
+    getAllCart(shopId: String!):[Cart]
   }
 
   type Mutation {
@@ -139,6 +143,7 @@ const typeDefs = gql`
 
     #Cart
     registerCart(cart: CartInput): Cart
+    deleteCart(cartId: String): Status
   }
 `;
 

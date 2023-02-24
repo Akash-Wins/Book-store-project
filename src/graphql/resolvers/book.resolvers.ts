@@ -28,9 +28,9 @@ export default {
     },
 
     async getAllBooks(parent, args, context) {
-        const { sellerId } = args;
+        const { shopId } = args;
         const request: IBookService.IGetBookRequest = {
-          sellerId
+          shopId
         };
         let response: IBookService.IGetBookResponse;
       
