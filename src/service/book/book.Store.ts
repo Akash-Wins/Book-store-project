@@ -16,7 +16,7 @@ export default class BookStore {
   };
 
   /**
-   * creating new user and saving in Database
+   * creating new book and saving in Database
    */
   async createBook(bookInput: IBook): Promise<IBook> {
     const book = new Book(bookInput);
@@ -30,17 +30,18 @@ export default class BookStore {
   }
 
   /**
-   * Get viewMoreGrants list
+   * Get book list
    */
-   public async getAll(): Promise<IBook> {
+   public async getAll(shopId: string): Promise<IBook> {
     let book;
     try {
-        book = await Book.find().lean();
+        book = await Book.find({ shopId },).lean();
     } catch (e) {
       return Promise.reject(new BookStore.OPERATION_UNSUCCESSFUL());
     }
     return book;
   }
+
 
   /**
    *Get by attributes in object form
@@ -48,6 +49,22 @@ export default class BookStore {
   public async getByAttributes(attributes: object): Promise<IBook> {
     try {
       return await Book.findOne(attributes).lean();
+    } catch (e) {
+      return Promise.reject(new BookStore.OPERATION_UNSUCCESSFUL());
+    }
+  }
+
+  /**
+   * updating book
+   */
+  public async update(_id: string,attributes: object): Promise<IBook> {
+    try {
+      const updateBook = await Book.findByIdAndUpdate(
+        { _id },
+        { $set: attributes },
+        { upsert: true, new: true }
+      ).lean();
+      return updateBook;
     } catch (e) {
       return Promise.reject(new BookStore.OPERATION_UNSUCCESSFUL());
     }

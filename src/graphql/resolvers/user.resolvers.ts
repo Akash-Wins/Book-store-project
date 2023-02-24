@@ -15,6 +15,7 @@ export default {
 
       let response: IUserService.ILoginUserResponse = {
         status: STATUS_CODES.UNKNOWN_CODE,
+        message:""
       };
 
       try {
@@ -80,6 +81,32 @@ export default {
       } catch (e) {
         throw e;
       }
+      return response;
+    },
+
+    async verifyEmail(parent, args) {
+      const { email , verifyEmailCode } = args.user;
+
+      const request: IUserService.IVerifyUserEmailRequest = {
+        email,
+        verifyEmailCode
+      };
+
+      let response: IUserService.IVerifyUserEmailResponse;
+
+      try {
+        response = await proxy.user.verifyEmail(request);
+
+        if (response.status !== STATUS_CODES.OK) {
+          throw new ApolloError(
+            response.error.message,
+            response.status.toString()
+          );
+        }
+      } catch (e) {
+        throw e;
+      }
+
       return response;
     },
 

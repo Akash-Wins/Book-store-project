@@ -28,12 +28,9 @@ export default {
     },
 
     async getAllBooks(parent, args, context) {
-        useAuthValidator(context);
-        const { id } = context.req.user;
-        // const { _id } = args;
-  
+        const { sellerId } = args;
         const request: IBookService.IGetBookRequest = {
-          sellerId: id,
+          sellerId
         };
         let response: IBookService.IGetBookResponse;
       
@@ -58,11 +55,13 @@ export default {
       const { id } = context.req.user;
       
       const {
-        book: { bookName, shopId},
+        book: { bookName, shopId, price, quantity},
       } = args;
 
       const request: IBookService.IRegisterBookRequest = {
-        bookName, 
+        bookName,
+        price,
+        quantity, 
         shopId:shopId,
         sellerId:id
       };
@@ -80,8 +79,32 @@ export default {
       } catch (e) {
         throw e;
       }
-
       return response.book;
+    },
+
+    async deleteBook(parent, args, context) {
+      useAuthValidator(context);
+      const {id} = context.req.user
+      const {
+        book: { _id},
+      } = args;
+      const request: IBookService.IDeleteBookRequest = {
+        _id,
+        userId:id
+      };
+      let response: IBookService.IDeleteBookResponse;
+      try {
+        response = await proxy.book.delete(request);
+        if (response.status !== STATUS_CODES.OK) {
+          throw new ApolloError(
+            response.error.message,
+            response.status.toString()
+          );
+        }
+      } catch (e) {
+        throw e;
+      }
+      return response;
     },
   },
 };

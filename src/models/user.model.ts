@@ -1,6 +1,6 @@
 import { Role } from "../utils/enum/roleEnum";
-import { StatusEnum } from "../utils/enum/statusEnum";
 import shortid from "shortid";
+import MetaData from "../models/meta.model"
 
 export default {
   _id: {
@@ -27,9 +27,23 @@ export default {
     required:true
   },
   isActive:{
-    type: String,
-    enum: Object.values(StatusEnum),
+    type: Boolean,
     required: false,
-    default:StatusEnum.ENABLE
-  }
+    default:true
+  },
+  verifyEmailCode: {
+    type: String,
+    required: false,
+    default: null,
+  },
+  emailVerifiedAt: {
+    type: Number,
+    required: false,
+    default: null,
+  },
+  isVerified: {
+    type: Boolean,
+    required: false,
+  },
+  meta:MetaData
 };

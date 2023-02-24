@@ -1,5 +1,5 @@
 import shortid from "shortid";
-import { StatusEnum } from "../utils/enum/statusEnum";
+import MetaData from "../models/meta.model"
 
 export default {
   _id: {
@@ -20,9 +20,9 @@ export default {
     required: false,
   },
   isActive:{
-    type: String,
-    enum:Object.values(StatusEnum),
-    default:StatusEnum.ENABLE,
+    type: Boolean,
     required: false,
-  }
+    default: true
+  },
+  meta:MetaData
 };

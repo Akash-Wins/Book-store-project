@@ -1,4 +1,4 @@
-import Joi from "joi";
+import Joi, { date } from "joi";
 import ShopStore from "./shop.Store";
 import IShop from "../../utils/interface/IShop";
 import STATUS_CODES from "../../utils/enum/StatusCodesEnum";
@@ -8,11 +8,14 @@ import { IAppServiceProxy } from "../appServiceProxy";
 import { toError } from "../../utils/interface/common";
 import IUser from "src/utils/interface/IUser";
 import UserStore from "../user/user.Store";
-import { StatusEnum } from "../../utils/enum/statusEnum";
+import { Role } from "../../utils/enum/roleEnum";
+import BookStore from "../book/book.Store";
+import IBook from "../../utils/interface/IBook";
 
 export default class ShopService implements IShopService.IShopServiceAPI {
   private shopStore = new ShopStore();
   private userStore = new UserStore();
+  private bookStore = new BookStore();
   private proxy: IAppServiceProxy;
 
   constructor(proxy: IAppServiceProxy) {
@@ -20,7 +23,7 @@ export default class ShopService implements IShopService.IShopServiceAPI {
   }
 
   /**
-   * Creating new user
+   * Creating new shop
    */
   public createShop = async (
     request: IShopService.IRegisterShopRequest
@@ -50,7 +53,7 @@ export default class ShopService implements IShopService.IShopServiceAPI {
       userCheck = await this.userStore.getByAttributes({ _id:sellerId });
 
       //role check only seller can create shop
-      if (userCheck.role!=="seller" || userCheck.isActive == StatusEnum.DISABLE) {
+      if (userCheck.role!== Role.SELLER || userCheck.isActive == false) {
         const errorMsg = ErrorMessageEnum.INVALID_CREDENTIALS;
         response.status = STATUS_CODES.BAD_REQUEST;
         response.error = toError(errorMsg);
@@ -63,12 +66,12 @@ export default class ShopService implements IShopService.IShopServiceAPI {
       return response;
     }
 
-    // Check if shop is already registered
+    // Check if shopName is already registered
     let existingShop: IShop;
     try {
       existingShop = await this.shopStore.getByAttributes({ shopName });
 
-      //Error if shop id is already exist
+      //Error if shop is already exist
       if (existingShop && existingShop?.shopName) {
         const errorMsg = ErrorMessageEnum.SHOP_ALREADY_EXIST;
         response.status = STATUS_CODES.BAD_REQUEST;
@@ -82,11 +85,15 @@ export default class ShopService implements IShopService.IShopServiceAPI {
       return response;
     }
 
-    //Save the user to storage
+    //Save the shop to storage
     const attributes: IShop = {
       shopName,
       address,
-      sellerId
+      sellerId,
+      meta:{
+        createdAt:Date.now(),
+        createdBy:sellerId
+      }
     };
 
     let shop: IShop;
@@ -150,10 +157,10 @@ export default class ShopService implements IShopService.IShopServiceAPI {
     return response;
   };
 
-   /**
+  /**
    * Get All Shops
    */
-    public getAllShops = async (
+  public getAllShops = async (
       request: IShopService.IGetShopRequest
     ): Promise<IShopService.IGetShopResponse> => {
       const response: IShopService.IGetShopResponse = {
@@ -173,8 +180,10 @@ export default class ShopService implements IShopService.IShopServiceAPI {
       response.shop = shop;
       return response;
     };
-  
-  
+    
+  /**
+   * Update Shop
+   */
   public update = async (
     request: IShopService.IUpdateShopRequest
   ): Promise<IShopService.IUpdateShopResponse> => {
@@ -206,7 +215,7 @@ export default class ShopService implements IShopService.IShopServiceAPI {
       user = await this.userStore.getByAttributes({_id:sellerId});
 
       //if shop's id is incorrect
-      if (!shop || user.isActive == StatusEnum.DISABLE) {
+      if (!shop || user.isActive == false) {
         const errorMsg = ErrorMessageEnum.INVALID_CREDENTIALS;
         response.status = STATUS_CODES.BAD_REQUEST;
         response.error = toError(errorMsg);
@@ -223,6 +232,10 @@ export default class ShopService implements IShopService.IShopServiceAPI {
     const attributes: IShop = {
       shopName,
       address,
+      meta:{
+        updatedAt:Date.now(),
+        updatedBy:sellerId
+      }
     };
 
     try {
@@ -248,7 +261,8 @@ export default class ShopService implements IShopService.IShopServiceAPI {
       status: STATUS_CODES.UNKNOWN_CODE,
     };
     const schema = Joi.object().keys({
-      userId: Joi.string().required(),
+      shopId: Joi.string().required(),
+      sellerId: Joi.string().required(),
     });
     const params = schema.validate(request);
 
@@ -258,12 +272,14 @@ export default class ShopService implements IShopService.IShopServiceAPI {
       response.error = toError(params.error.details[0].message);
       return response;
     }
-    const { userId } = params.value;
+    const { shopId ,sellerId} = params.value;
 
     //exists shop
     let shop;
     try {
-      shop = await this.shopStore.getByAttributes({ sellerId: userId });
+      shop = await this.shopStore.getByAttributes({_id: shopId, sellerId:sellerId});  
+
+      // check for shop exist
       if (!shop) {
         const errorMsg = ErrorMessageEnum.INVALID_CREDENTIALS;
         response.status = STATUS_CODES.BAD_REQUEST;
@@ -276,14 +292,22 @@ export default class ShopService implements IShopService.IShopServiceAPI {
       response.error = toError(e.message);
       return response;
     }
-    if (shop?.isActive == StatusEnum.DISABLE) {
+    if (shop?.isActive == false) {
       const errorMsg = ErrorMessageEnum.RECORD_NOT_FOUND;
       response.status = STATUS_CODES.NOT_FOUND;
       response.error = toError(errorMsg);
       return response;
     }
+    
+    let book
     try {
-      await this.shopStore.update(shop._id, { isActive: StatusEnum.DISABLE });
+      shop = await this.shopStore.update(shop._id, { isActive: false });
+      // if(!shop?.isActive == false )
+      // book = await this.bookStore.getAll(_id)
+      // const bookDelete = book.map((x)=>{
+      //   return x.isDeleted.push(true)
+      // })
+
     } catch (e) {
       console.error(e);
       response.status = STATUS_CODES.INTERNAL_SERVER_ERROR;

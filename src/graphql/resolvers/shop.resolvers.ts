@@ -28,10 +28,6 @@ export default {
     },
 
     async getAllShops(parent, args, context) {
-      // useAuthValidator(context);
-      // const { id } = context.req.user;
-      // const { _id } = args;
-
       const request: IShopService.IGetShopRequest = {};
       let response: IShopService.IGetShopResponse;
 
@@ -110,10 +106,17 @@ export default {
     async deleteShop(parent, args, context) {
       useAuthValidator(context);
       const {id} = context.req.user
+      console.log(args,"***************************args*******************")
+      const {
+        shopId
+       } = args;
       const request: IShopService.IDeleteShopRequest = {
-        userId:id
+        shopId,
+        sellerId:id,
       };
+      console.log(request,"*****************request************")
       let response: IShopService.IDeleteShopResponse;
+
       try {
         response = await proxy.shop.delete(request);
         if (response.status !== STATUS_CODES.OK) {
@@ -123,9 +126,11 @@ export default {
           );
         }
       } catch (e) {
+        console.log(e)
         throw e;
       }
       return response;
     },
   },
 };
+

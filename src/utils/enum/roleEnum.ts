@@ -3,7 +3,3 @@ export enum Role {
   BUYER = "buyer",
 }
 
-export enum Status {
-  ENABLE = "enable",
-  DISABLE = "disable",
-}

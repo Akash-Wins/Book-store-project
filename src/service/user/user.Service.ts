@@ -5,14 +5,12 @@ import ErrorMessageEnum from "../../utils/enum/errorMessageEnum";
 import * as IUserService from "./IUserService";
 import { IAppServiceProxy } from "../appServiceProxy";
 import { toError } from "../../utils/interface/common";
-// import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "../../env";
 import IUser from "../../utils/interface/IUser";
-import {StatusEnum} from "../../utils/enum/statusEnum"
 import ShopStore from "../shop/shop.Store";
-// import * as RandomUtil from "../../utils/random";
-//import * as IEmailService from "../email/IEmailService";
+import * as RandomUtil from "../../utils/random";
+import * as IEmailService from "../email/IEmailService";
 
 export default class UserService implements IUserService.IUserServiceAPI {
   private userStore = new UserStore();
@@ -79,15 +77,15 @@ export default class UserService implements IUserService.IUserServiceAPI {
       return response;
     }
 
-    //Hashing password
-    // const hashPassword = await bcrypt.hash(password, 10);
-
     //Save the user to storage
     const attributes: IUser = {
       firstName,
       lastName,
       email,
       role,
+      meta: {
+        createdAt: Date.now(),
+      },
     };
 
     let user: IUser;
@@ -105,6 +103,73 @@ export default class UserService implements IUserService.IUserServiceAPI {
   };
 
   /**
+   * Verify email
+   */
+  public verifyEmail = async (
+    request: IUserService.IVerifyUserEmailRequest
+  ): Promise<IUserService.IVerifyUserEmailResponse> => {
+    const response: IUserService.IVerifyUserEmailResponse = {
+      status: STATUS_CODES.UNKNOWN_CODE,
+    };
+
+    const schema = Joi.object().keys({
+      email: Joi.string().required(),
+      verifyEmailCode: Joi.string().required(),
+    });
+
+    const params = schema.validate(request);
+
+    if (params.error) {
+      console.error(params.error);
+      response.status = STATUS_CODES.UNPROCESSABLE_ENTITY;
+      response.error = toError(params.error.details[0].message);
+      response.verified = false;
+      return response;
+    }
+    const {  email, verifyEmailCode } = params.value;
+
+    let user: IUser;
+    try {
+      const emailCheck = await this.userStore.getByAttributes({verifyEmailCode,email:email})
+      if (!emailCheck ) {
+        response.status = STATUS_CODES.BAD_REQUEST;
+        const errorMsg = ErrorMessageEnum.INVALID_CREDENTIALS;
+        response.error = toError(errorMsg);
+        response.verified = false;
+        return response;
+      }
+    } catch (e) {
+      console.error(e);
+      response.error = toError(e.message);
+      response.status = STATUS_CODES.INTERNAL_SERVER_ERROR;
+      response.verified = false;
+      return response;
+    }
+    try{
+      user = await this.userStore.verifyEmail(verifyEmailCode);
+      if(!user){
+        response.status = STATUS_CODES.BAD_REQUEST;
+        const errorMsg = ErrorMessageEnum.INVALID_CREDENTIALS;
+        response.error = toError(errorMsg);
+        response.verified = false;
+        return response;
+      }
+    }
+    catch (e) {
+      console.error(e);
+      response.error = toError(e.message);
+      response.status = STATUS_CODES.INTERNAL_SERVER_ERROR;
+      response.verified = false;
+      return response;
+    }
+    response.status = STATUS_CODES.OK;
+    response.user = user;
+    response.token = this.generateJWT(user);
+    return response;
+  };
+
+
+  /**
    * User login
    */
   public login = async (
@@ -112,6 +177,7 @@ export default class UserService implements IUserService.IUserServiceAPI {
   ): Promise<IUserService.ILoginUserResponse> => {
     const response: IUserService.ILoginUserResponse = {
       status: STATUS_CODES.UNKNOWN_CODE,
+      message:""
     };
     const schema = Joi.object().keys({
       email: Joi.string().email().required(),
@@ -130,9 +196,9 @@ export default class UserService implements IUserService.IUserServiceAPI {
     try {
       //get user bu email id to check it exist or not
       user = await this.userStore.getByAttributes({ email });
-  
+
       //if credentials are incorrect
-      if (!user || user.isActive == StatusEnum.DISABLE) {
+      if (!user || user.isActive == false) {
         const errorMsg = ErrorMessageEnum.INVALID_CREDENTIALS;
         response.status = STATUS_CODES.UNAUTHORIZED;
         response.error = toError(errorMsg);
@@ -144,19 +210,41 @@ export default class UserService implements IUserService.IUserServiceAPI {
       response.error = toError(e.message);
       return response;
     }
-
-    //comparing password to insure that password is correct
+  
     const isValid = await this.userStore.getByAttributes({ email });
-
-    //if isValid or user.password is null
+    //if isValid or user.email is null
     if (!isValid || !user?.email) {
       const errorMsg = ErrorMessageEnum.INVALID_CREDENTIALS;
       response.status = STATUS_CODES.UNAUTHORIZED;
       response.error = toError(errorMsg);
       return response;
     }
+     // generate a 6 digit code, could hash it, probably not that important right now.
+     const verifyEmailCode = RandomUtil.generateRandomNumber(6).toString();
+  
+     if (user) {
+       try {
+         //update code in user
+         await this.userStore.setVerifyEmailCode(user._id, verifyEmailCode);
+   
+         //veriify code send in mail
+         const request: IEmailService.ISendUserEmailVerificationEmailRequest = {
+           toAddress: user?.email,
+           firstName: user?.firstName,
+           lastName: user?.lastName,
+           verifyEmailUrl: verifyEmailCode,
+         };
+   
+         await this.proxy.email.sendUserEmailVerificationEmail(request);
+       } catch (e) {
+         console.error(e);
+         response.status = STATUS_CODES.INTERNAL_SERVER_ERROR;
+         response.error = toError(e.message);
+         return response;
+       }
+     }
     response.status = STATUS_CODES.OK;
-    response.token = this.generateJWT(user);
+    response.message = "otp sent to email please verify to login"
     response.user = user;
     return response;
   };
@@ -207,6 +295,9 @@ export default class UserService implements IUserService.IUserServiceAPI {
     return response;
   };
 
+  /**
+   * User update
+   */
   public update = async (
     request: IUserService.IUpdateUserRequest
   ): Promise<IUserService.IUpdateUserResponse> => {
@@ -231,16 +322,35 @@ export default class UserService implements IUserService.IUserServiceAPI {
     }
     const { firstName, lastName, email, _id } = params.value;
 
+    let user: IUser;
+    try {
+      user = await this.userStore.getByAttributes({ _id });
+      //if user's id is incorrect
+      if (!user) {
+        const errorMsg = ErrorMessageEnum.INVALID_USER_ID;
+        response.status = STATUS_CODES.BAD_REQUEST;
+        response.error = toError(errorMsg);
+        return response;
+      }
+    } catch (e) {
+      console.error(e);
+      response.status = STATUS_CODES.INTERNAL_SERVER_ERROR;
+      response.error = toError(e.message);
+      return response;
+    }
+
     //Save the user to storage
     const attributes: IUser = {
       firstName,
       lastName,
       email,
+      meta: {
+        updatedAt: Date.now(),
+        updatedBy: _id
+      },
     };
-
-    let user: IUser;
     try {
-      user = await this.userStore.update(_id, attributes);
+      user = await this.userStore.update(_id, {...attributes});
     } catch (e) {
       console.error(e);
       response.status = STATUS_CODES.INTERNAL_SERVER_ERROR;
@@ -274,12 +384,12 @@ export default class UserService implements IUserService.IUserServiceAPI {
     }
     const { userId } = params.value;
 
-    //exists user
+    //exists user and shop
     let user;
     let shop;
     try {
       user = await this.userStore.getByAttributes({ _id: userId });
-      shop = await this.shopStore.getByAttributes({sellerId:userId})
+      shop = await this.shopStore.getByAttributes({ sellerId: userId });
       if (!user) {
         const errorMsg = ErrorMessageEnum.INVALID_CREDENTIALS;
         response.status = STATUS_CODES.BAD_REQUEST;
@@ -292,16 +402,16 @@ export default class UserService implements IUserService.IUserServiceAPI {
       response.error = toError(e.message);
       return response;
     }
-    if (user?.isActive == StatusEnum.DISABLE) {
+    if (user?.isActive == false) {
       const errorMsg = ErrorMessageEnum.RECORD_NOT_FOUND;
       response.status = STATUS_CODES.NOT_FOUND;
       response.error = toError(errorMsg);
       return response;
     }
     try {
-      await this.userStore.update( user._id,{ isActive: StatusEnum.DISABLE });
-      if(user.isActive == StatusEnum.DISABLE || shop.sellerId == userId ){
-        await this.shopStore.update(shop._id,{isActive: StatusEnum.DISABLE});
+      await this.userStore.update(user._id, { isActive: false });
+      if (user.isActive == false || shop?.sellerId == userId) {
+        await this.shopStore.update(shop._id, { isActive: false });
       }
     } catch (e) {
       console.error(e);
@@ -309,7 +419,7 @@ export default class UserService implements IUserService.IUserServiceAPI {
       response.error = toError(e.message);
       return response;
     }
-  
+
     response.status = STATUS_CODES.OK;
     response.success = true;
     return response;

@@ -44,7 +44,7 @@ export default class UserStore {
   /**
    * updating user
    */
-   public async update(_id: string,attributes): Promise<IUser> {
+  public async update(_id: string,attributes: object): Promise<IUser> {
     try {
       const updateUser = await User.findByIdAndUpdate(
         { _id },
@@ -56,5 +56,53 @@ export default class UserStore {
       return Promise.reject(new UserStore.OPERATION_UNSUCCESSFUL());
     }
   }
+
+    /**
+   * set veify email code in user
+   */
+     public async setVerifyEmailCode(
+      _id: string,
+      verifyEmailCode: string
+    ): Promise<IUser> {
+      let user: IUser;
+      try {
+        user = await User.findOneAndUpdate(
+          { _id },
+          {
+            $set: {
+              verifyEmailCode,
+            },
+          },
+          { new: true }
+        );
+      } catch (e) {
+        return Promise.reject(new UserStore.OPERATION_UNSUCCESSFUL());
+      }
+      return user;
+    }
+    /**
+     *verify email and set verifyEmailCode null
+     */
+    public async verifyEmail(verifyEmailCode: string): Promise<IUser> {
+      let user: IUser;
+      try {
+        user = await User.findOneAndUpdate(
+          { verifyEmailCode },
+          {
+            $set: {
+              isActive: true,
+              verifyEmailCode: null,
+              emailVerifiedAt: Date.now(),
+              isVerified: true,
+            },
+          },
+          { new: true }
+        );
+      } catch (e) {
+        return Promise.reject(new UserStore.OPERATION_UNSUCCESSFUL());
+      }
+      return user;
+    }
+  
 
 }

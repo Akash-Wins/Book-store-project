@@ -3,6 +3,7 @@ import { IResponse } from "../../utils/interface/common";
 
 export interface IUserServiceAPI {
   createUser(request: IRegisterUserRequest): Promise<IRegisterUserResponse>;
+  verifyEmail(request: IVerifyUserEmailRequest): Promise<IVerifyUserEmailResponse>;
   login(request: ILoginUserRequest): Promise<ILoginUserResponse>;
   get(request: IGetUserRequest): Promise<IGetUserResponse>;
   update(request: IUpdateUserRequest): Promise<IUpdateUserResponse>;
@@ -10,7 +11,7 @@ export interface IUserServiceAPI {
 }
 
 /********************************************************************************
- *  Create user
+ *  Create User
  ********************************************************************************/
 export interface IRegisterUserRequest {
   firstName: string;
@@ -24,18 +25,31 @@ export interface IRegisterUserResponse extends IResponse {
 }
 
 /********************************************************************************
+ *  Verify Email
+ ********************************************************************************/
+ export interface IVerifyUserEmailRequest {
+  verifyEmailCode: string;
+  email: string
+}
+export interface IVerifyUserEmailResponse extends IResponse {
+  verified?: boolean;
+  token?: string;
+  user?: IUser;
+}
+
+/********************************************************************************
  * Login
  ********************************************************************************/
 export interface ILoginUserRequest {
   email: string;
 }
 export interface ILoginUserResponse extends IResponse {
+  message: string;
   user?: IUser;
-  token?: string;
 }
 
 /********************************************************************************
- *  Get user
+ *  Get User
  ********************************************************************************/
 
 export interface IGetUserRequest {

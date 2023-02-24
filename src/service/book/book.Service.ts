@@ -32,6 +32,8 @@ export default class BookService implements IBookService.IBookServiceAPI {
 
     const schema = Joi.object().keys({
       bookName: Joi.string().required(),
+      price: Joi.number().required(),
+      quantity: Joi.number().required(),
       shopId: Joi.string().required(),
       sellerId:Joi.string().required()
     });
@@ -45,7 +47,7 @@ export default class BookService implements IBookService.IBookServiceAPI {
       return response;
     }
 
-    const { shopId, bookName,sellerId } = params.value;
+    const { shopId, bookName, price, quantity, sellerId } = params.value;
 
     let shopCheck: IShop;
     try {
@@ -68,7 +70,7 @@ export default class BookService implements IBookService.IBookServiceAPI {
     try {
       existingBook = await this.bookStore.getByAttributes({ bookName });
 
-      //Error if shop id is already exist
+      //Error if book is already exist
       if (existingBook && existingBook?.bookName) {
         const errorMsg = ErrorMessageEnum.BOOK_ALREADY_EXIST;
         response.status = STATUS_CODES.BAD_REQUEST;
@@ -85,7 +87,14 @@ export default class BookService implements IBookService.IBookServiceAPI {
     //Save the book to storage
     const attributes: IBook = {
       bookName,
+      price,
+      quantity,
       shopId,
+      sellerId,
+      meta:{
+        createdAt:Date.now(),
+        createdBy:sellerId
+      }
     };
 
     let book: IBook;
@@ -158,10 +167,24 @@ export default class BookService implements IBookService.IBookServiceAPI {
     const response: IBookService.IGetBookResponse = {
       status: STATUS_CODES.UNKNOWN_CODE,
     };
+    const schema = Joi.object().keys({
+      shopId: Joi.string().required(),
+    });
+
+    const params = schema.validate(request);
+
+    if (params.error) {
+      console.error(params.error);
+      response.status = STATUS_CODES.UNPROCESSABLE_ENTITY;
+      response.error = toError(params.error.details[0].message);
+      return response;
+    }
+
+    const { shopId } = params.value;
   
     let book:IBook;
     try {
-      book = await this.bookStore.getAll();
+      book = await this.bookStore.getAll(shopId);
     } catch (e) {
       console.error(e);
       response.status = STATUS_CODES.INTERNAL_SERVER_ERROR;
@@ -172,5 +195,68 @@ export default class BookService implements IBookService.IBookServiceAPI {
     response.book = book;
     return response;
   };
+
+   /**
+   * Delete Book
+   */
+    public delete = async (
+      request: IBookService.IDeleteBookRequest
+    ): Promise<IBookService.IDeleteBookResponse> => {
+      const response: IBookService.IDeleteBookResponse = {
+        status: STATUS_CODES.UNKNOWN_CODE,
+      };
+      const schema = Joi.object().keys({
+        _id: Joi.string().required(),
+        userId: Joi.string().required(),
+      });
+      const params = schema.validate(request);
+  
+      if (params.error) {
+        console.error(params.error);
+        response.status = STATUS_CODES.UNPROCESSABLE_ENTITY;
+        response.error = toError(params.error.details[0].message);
+        return response;
+      }
+      const { userId , _id} = params.value;
+      //exists book
+      let book: IBook;
+      // let user;
+      try {
+        book = await this.bookStore.getByAttributes({ _id:_id, isDeleted:false });
+        // check for book exist
+        if (!book ) {
+          const errorMsg = ErrorMessageEnum.RECORD_NOT_FOUND;
+          response.status = STATUS_CODES.BAD_REQUEST;
+          response.error = toError(errorMsg);
+          return response;
+        }
+
+        if(book.sellerId !== userId){
+          const errorMsg = ErrorMessageEnum.INVALID_CREDENTIALS;
+          response.status = STATUS_CODES.UNAUTHORIZED;
+          response.error = toError(errorMsg);
+          return response;
+        }
+
+      } catch (e) {
+        console.error(e);
+        response.status = STATUS_CODES.INTERNAL_SERVER_ERROR;
+        response.error = toError(e.message);
+        return response;
+      }
+
+      try {
+        await this.bookStore.update(book._id, { isDeleted:true});
+      } catch (e) {
+        console.error(e);
+        response.status = STATUS_CODES.INTERNAL_SERVER_ERROR;
+        response.error = toError(e.message);
+        return response;
+      }
+  
+      response.status = STATUS_CODES.OK;
+      response.success = true;
+      return response;
+    };
 
 }

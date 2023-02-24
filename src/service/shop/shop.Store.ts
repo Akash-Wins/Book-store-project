@@ -16,7 +16,7 @@ export default class ShopStore {
   };
 
   /**
-   * creating new user and saving in Database
+   * creating new shop and saving in Database
    */
   async createShop(shopInput: IShop): Promise<IShop> {
     const shop = new Shop(shopInput);

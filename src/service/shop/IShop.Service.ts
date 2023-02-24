@@ -48,7 +48,8 @@ export interface IUpdateShopResponse extends IResponse {
  * Delete Shop
  ********************************************************************************/
  export interface IDeleteShopRequest {
-  userId: string
+  sellerId: string
+  shopId: string
 }
 
 export interface IDeleteShopResponse extends IResponse {

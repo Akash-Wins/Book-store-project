@@ -11,26 +11,21 @@ export default {
     type: String,
     required: false,
   },
+  userId:{
+    type: String,
+    required: false,
+  },
   shopId: {
     type: String,
     required: false,
   },
-  bookName:{
+  bookId:{
     type: String,
     required: false,
-  },
-  price:{
-    type: Number,
-    required:false
   },
   quantity:{
     type: Number,
     required:false
-  },
-  isDeleted:{
-    type: Boolean,
-    required: false,
-    default:false
   },
   meta:MetaData
 };
