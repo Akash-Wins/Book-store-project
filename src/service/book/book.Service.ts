@@ -1,6 +1,5 @@
 import Joi from "joi";
 import BookStore from "./book.Store";
-import UserStore from "../user/user.Store";
 import STATUS_CODES from "../../utils/enum/StatusCodesEnum";
 import ErrorMessageEnum from "../../utils/enum/errorMessageEnum";
 import * as IBookService from "./IBook.Service";
@@ -12,7 +11,6 @@ import ShopStore from "../shop/shop.Store";
 
 export default class BookService implements IBookService.IBookServiceAPI {
   private bookStore = new BookStore();
-  private userStore = new UserStore();
   private shopStore = new ShopStore();
   private proxy: IAppServiceProxy;
 
@@ -187,7 +185,7 @@ export default class BookService implements IBookService.IBookServiceAPI {
     } catch (e) {
       console.error(e);
       response.status = STATUS_CODES.INTERNAL_SERVER_ERROR;
-      response.error = e;
+      response.error = toError(e.message);
       return response;
     }
     response.status = STATUS_CODES.OK;
@@ -205,7 +203,7 @@ export default class BookService implements IBookService.IBookServiceAPI {
         status: STATUS_CODES.UNKNOWN_CODE,
       };
       const schema = Joi.object().keys({
-        _id: Joi.string().required(),
+        bookId: Joi.string().required(),
         userId: Joi.string().required(),
       });
       const params = schema.validate(request);
@@ -216,12 +214,12 @@ export default class BookService implements IBookService.IBookServiceAPI {
         response.error = toError(params.error.details[0].message);
         return response;
       }
-      const { userId , _id} = params.value;
+      const { userId , bookId} = params.value;
       //exists book
       let book: IBook;
       // let user;
       try {
-        book = await this.bookStore.getByAttributes({ _id:_id, isDeleted:false });
+        book = await this.bookStore.getByAttributes({ _id:bookId, isDeleted:false });
         // check for book exist
         if (!book ) {
           const errorMsg = ErrorMessageEnum.RECORD_NOT_FOUND;

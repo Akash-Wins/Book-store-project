@@ -42,6 +42,19 @@ export default class BookStore {
     return book;
   }
 
+    /**
+   * Get book list
+   */
+    public async getAllBook(sellerId:string): Promise<IBook> {
+      let book;
+      try {
+          book = await Book.find({ sellerId },).lean();
+      } catch (e) {
+        return Promise.reject(new BookStore.OPERATION_UNSUCCESSFUL());
+      }
+      return book;
+    }
+
 
   /**
    *Get by attributes in object form
@@ -65,6 +78,22 @@ export default class BookStore {
         { upsert: true, new: true }
       ).lean();
       return updateBook;
+    } catch (e) {
+      return Promise.reject(new BookStore.OPERATION_UNSUCCESSFUL());
+    }
+  }
+
+   /**
+   * updating many books
+   */
+   public async updateAllBooks(sellerId: string,attributes: object): Promise<any> {
+    try {
+      const updateBooks = await Book.updateMany(
+        { sellerId },
+        { $set: attributes },
+        { upsert: true, new: true }
+      ).lean();
+      return updateBooks;
     } catch (e) {
       return Promise.reject(new BookStore.OPERATION_UNSUCCESSFUL());
     }

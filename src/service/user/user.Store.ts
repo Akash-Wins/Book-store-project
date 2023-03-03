@@ -9,6 +9,9 @@ export const UserSchema = new Schema(UserMongo);
 export const User: Model<IUserModel> = model<IUserModel>("User", UserSchema);
 
 export default class UserStore {
+  aggregate() {
+    throw new Error("Method not implemented.");
+  }
   public static OPERATION_UNSUCCESSFUL = class extends Error {
     constructor() {
       super("An error occured while processing the request.");

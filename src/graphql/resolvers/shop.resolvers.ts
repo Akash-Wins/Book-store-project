@@ -27,7 +27,7 @@ export default {
       return response?.shop;
     },
 
-    async getAllShops(parent, args, context) {
+    async getAllShops() {
       const request: IShopService.IGetShopRequest = {};
       let response: IShopService.IGetShopResponse;
 
@@ -106,7 +106,6 @@ export default {
     async deleteShop(parent, args, context) {
       useAuthValidator(context);
       const {id} = context.req.user
-      console.log(args,"***************************args*******************")
       const {
         shopId
        } = args;
@@ -114,7 +113,6 @@ export default {
         shopId,
         sellerId:id,
       };
-      console.log(request,"*****************request************")
       let response: IShopService.IDeleteShopResponse;
 
       try {

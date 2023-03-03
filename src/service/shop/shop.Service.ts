@@ -165,12 +165,13 @@ export default class ShopService implements IShopService.IShopServiceAPI {
       };
     
       let shop:IShop;
+      // check exist shop in database
       try {
         shop = await this.shopStore.getAll();
       } catch (e) {
         console.error(e);
         response.status = STATUS_CODES.INTERNAL_SERVER_ERROR;
-        response.error = e;
+        response.error = toError(e.message);
         return response;
       }
       response.status = STATUS_CODES.OK;
@@ -208,8 +209,24 @@ export default class ShopService implements IShopService.IShopServiceAPI {
     let shop: IShop;
     let user: IUser;
     try {
-      shop = await this.shopStore.getByAttributes({ _id,sellerId:sellerId });
-      user = await this.userStore.getByAttributes({_id:sellerId});
+      //check exist shop in database
+      try {
+        shop = await this.shopStore.getByAttributes({ _id,sellerId:sellerId });
+      } catch (e) {
+        console.error(e);
+        response.status = STATUS_CODES.INTERNAL_SERVER_ERROR;
+        response.error = toError(e.message);
+        return response;
+      }
+      //check exist seller in databse
+      try {
+        user = await this.userStore.getByAttributes({_id:sellerId});
+      } catch (e) {
+        console.error(e);
+        response.status = STATUS_CODES.INTERNAL_SERVER_ERROR;
+        response.error = toError(e.message);
+        return response;
+      }
 
       //if shop's id is incorrect
       if (!shop || user.isActive == false) {
@@ -304,7 +321,6 @@ export default class ShopService implements IShopService.IShopServiceAPI {
       response.error = toError(e.message);
       return response;
     }
-
     response.status = STATUS_CODES.OK;
     response.success = true;
     return response;

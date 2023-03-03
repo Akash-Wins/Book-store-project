@@ -3,11 +3,10 @@ import { IResponse } from "../../utils/interface/common";
 
 export interface ICartServiceAPI {
   createCart(request: IRegisterCartRequest): Promise<IRegisterCartResponse>;
-  delete(request: IDeleteCartRequest): Promise<IDeleteCartResponse>;
+  delete(request: IDeleteCartRequest);
   get(request: IGetCartRequest): Promise<IGetCartResponse>;
   getAllCart(request: IGetCartRequest): Promise<IGetCartResponse>;
-  // update(request: IUpdateCartRequest): Promise<IUpdateCartResponse>;
-  
+  update(request: IUpdateCartRequest);
 }
 
 /********************************************************************************
@@ -15,11 +14,12 @@ export interface ICartServiceAPI {
  ********************************************************************************/
 export interface IRegisterCartRequest {
   _id?: string;
-  bookId: string;
-  shopId?: string; 
+  bookId?: string;
+  shopId?: string;
   sellerId?: string;
-  buyerId?: string;
-  quantity: number;
+  buyerId: string;
+  quantity?: number;
+  total?: number;
 }
 
 export interface IRegisterCartResponse extends IResponse {
@@ -30,20 +30,19 @@ export interface IRegisterCartResponse extends IResponse {
  *  Update Cart
  ********************************************************************************/
 
- export interface IUpdateCartRequest {
+export interface IUpdateCartRequest {
   _id: string;
 }
 export interface IUpdateCartResponse extends IResponse {
   cart?: ICart;
 }
 
-
 /********************************************************************************
  * Delete Cart
  ********************************************************************************/
- export interface IDeleteCartRequest {
+export interface IDeleteCartRequest {
   cartId?: string;
-  buyerId: string
+  buyerId: string;
 }
 
 export interface IDeleteCartResponse extends IResponse {
@@ -57,12 +56,9 @@ export interface IDeleteCartResponse extends IResponse {
 export interface IGetCartRequest {
   _id?: string;
   shopId?: string;
-  sellerId?: string
+  sellerId?: string;
   buyerId?: string;
 }
 export interface IGetCartResponse extends IResponse {
   cart?: ICart;
 }
-
-
-

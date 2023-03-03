@@ -8,13 +8,18 @@ import { toError } from "../../utils/interface/common";
 import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "../../env";
 import IUser from "../../utils/interface/IUser";
+import IShop from "../../utils/interface/IShop";
+import IBook from "../../utils/interface/IBook";
 import ShopStore from "../shop/shop.Store";
+import BookStore from "../book/book.Store";
 import * as RandomUtil from "../../utils/random";
 import * as IEmailService from "../email/IEmailService";
+import { Role } from "../../utils/enum/roleEnum";
 
 export default class UserService implements IUserService.IUserServiceAPI {
   private userStore = new UserStore();
   private shopStore = new ShopStore();
+  private bookStore = new BookStore();
   private proxy: IAppServiceProxy;
 
   constructor(proxy: IAppServiceProxy) {
@@ -91,12 +96,25 @@ export default class UserService implements IUserService.IUserServiceAPI {
     let user: IUser;
     try {
       user = await this.userStore.createUser(attributes);
+      if (user) {
+        if (role == Role.BUYER) {
+          try {
+            await this.proxy.cart.createCart({ buyerId: user?._id });
+          } catch (e) {
+            console.error(e);
+            response.status = STATUS_CODES.INTERNAL_SERVER_ERROR;
+            response.error = toError(e.message);
+            return response;
+          }
+        }
+      }
     } catch (e) {
       console.error(e);
       response.status = STATUS_CODES.INTERNAL_SERVER_ERROR;
       response.error = toError(e.message);
       return response;
     }
+
     response.status = STATUS_CODES.OK;
     response.user = user;
     return response;
@@ -126,12 +144,16 @@ export default class UserService implements IUserService.IUserServiceAPI {
       response.verified = false;
       return response;
     }
-    const {  email, verifyEmailCode } = params.value;
+    const { email, verifyEmailCode } = params.value;
 
     let user: IUser;
+    //check exist user
     try {
-      const emailCheck = await this.userStore.getByAttributes({verifyEmailCode,email:email})
-      if (!emailCheck ) {
+      const emailCheck = await this.userStore.getByAttributes({
+        verifyEmailCode,
+        email: email,
+      });
+      if (!emailCheck) {
         response.status = STATUS_CODES.BAD_REQUEST;
         const errorMsg = ErrorMessageEnum.INVALID_CREDENTIALS;
         response.error = toError(errorMsg);
@@ -145,17 +167,16 @@ export default class UserService implements IUserService.IUserServiceAPI {
       response.verified = false;
       return response;
     }
-    try{
+    try {
       user = await this.userStore.verifyEmail(verifyEmailCode);
-      if(!user){
+      if (!user) {
         response.status = STATUS_CODES.BAD_REQUEST;
         const errorMsg = ErrorMessageEnum.INVALID_CREDENTIALS;
         response.error = toError(errorMsg);
         response.verified = false;
         return response;
       }
-    }
-    catch (e) {
+    } catch (e) {
       console.error(e);
       response.error = toError(e.message);
       response.status = STATUS_CODES.INTERNAL_SERVER_ERROR;
@@ -168,7 +189,6 @@ export default class UserService implements IUserService.IUserServiceAPI {
     return response;
   };
 
-
   /**
    * User login
    */
@@ -177,7 +197,7 @@ export default class UserService implements IUserService.IUserServiceAPI {
   ): Promise<IUserService.ILoginUserResponse> => {
     const response: IUserService.ILoginUserResponse = {
       status: STATUS_CODES.UNKNOWN_CODE,
-      message:""
+      message: "",
     };
     const schema = Joi.object().keys({
       email: Joi.string().email().required(),
@@ -194,7 +214,7 @@ export default class UserService implements IUserService.IUserServiceAPI {
 
     let user: IUser;
     try {
-      //get user bu email id to check it exist or not
+      //get user by email id to check it exist or not
       user = await this.userStore.getByAttributes({ email });
 
       //if credentials are incorrect
@@ -210,7 +230,7 @@ export default class UserService implements IUserService.IUserServiceAPI {
       response.error = toError(e.message);
       return response;
     }
-  
+
     const isValid = await this.userStore.getByAttributes({ email });
     //if isValid or user.email is null
     if (!isValid || !user?.email) {
@@ -219,32 +239,32 @@ export default class UserService implements IUserService.IUserServiceAPI {
       response.error = toError(errorMsg);
       return response;
     }
-     // generate a 6 digit code, could hash it, probably not that important right now.
-     const verifyEmailCode = RandomUtil.generateRandomNumber(6).toString();
-  
-     if (user) {
-       try {
-         //update code in user
-         await this.userStore.setVerifyEmailCode(user._id, verifyEmailCode);
-   
-         //veriify code send in mail
-         const request: IEmailService.ISendUserEmailVerificationEmailRequest = {
-           toAddress: user?.email,
-           firstName: user?.firstName,
-           lastName: user?.lastName,
-           verifyEmailUrl: verifyEmailCode,
-         };
-   
-         await this.proxy.email.sendUserEmailVerificationEmail(request);
-       } catch (e) {
-         console.error(e);
-         response.status = STATUS_CODES.INTERNAL_SERVER_ERROR;
-         response.error = toError(e.message);
-         return response;
-       }
-     }
+    // generate a 6 digit code, could hash it, probably not that important right now.
+    const verifyEmailCode = RandomUtil.generateRandomNumber(6).toString();
+
+    if (user) {
+      try {
+        //update code in user
+        await this.userStore.setVerifyEmailCode(user._id, verifyEmailCode);
+
+        //veriify code send in mail
+        const request: IEmailService.ISendUserEmailVerificationEmailRequest = {
+          toAddress: user?.email,
+          firstName: user?.firstName,
+          lastName: user?.lastName,
+          verifyEmailUrl: verifyEmailCode,
+        };
+
+        await this.proxy.email.sendUserEmailVerificationEmail(request);
+      } catch (e) {
+        console.error(e);
+        response.status = STATUS_CODES.INTERNAL_SERVER_ERROR;
+        response.error = toError(e.message);
+        return response;
+      }
+    }
     response.status = STATUS_CODES.OK;
-    response.message = "otp sent to email please verify to login"
+    response.message = "otp sent to email please verify to login";
     response.user = user;
     return response;
   };
@@ -346,11 +366,11 @@ export default class UserService implements IUserService.IUserServiceAPI {
       email,
       meta: {
         updatedAt: Date.now(),
-        updatedBy: _id
+        updatedBy: _id,
       },
     };
     try {
-      user = await this.userStore.update(_id, {...attributes});
+      user = await this.userStore.update(_id, { ...attributes });
     } catch (e) {
       console.error(e);
       response.status = STATUS_CODES.INTERNAL_SERVER_ERROR;
@@ -386,13 +406,15 @@ export default class UserService implements IUserService.IUserServiceAPI {
 
     //exists user and shop
     let user;
-    let shop;
+    let shop: IShop;
+    let book: IBook;
+
     try {
       user = await this.userStore.getByAttributes({ _id: userId });
-      shop = await this.shopStore.getByAttributes({ sellerId: userId });
-      if (!user) {
-        const errorMsg = ErrorMessageEnum.INVALID_CREDENTIALS;
-        response.status = STATUS_CODES.BAD_REQUEST;
+      //check user not exist in database
+      if (!user || user?.isActive == false) {
+        const errorMsg = ErrorMessageEnum.RECORD_NOT_FOUND;
+        response.status = STATUS_CODES.NOT_FOUND;
         response.error = toError(errorMsg);
         return response;
       }
@@ -402,24 +424,55 @@ export default class UserService implements IUserService.IUserServiceAPI {
       response.error = toError(e.message);
       return response;
     }
-    if (user?.isActive == false) {
-      const errorMsg = ErrorMessageEnum.RECORD_NOT_FOUND;
-      response.status = STATUS_CODES.NOT_FOUND;
-      response.error = toError(errorMsg);
-      return response;
-    }
     try {
-      await this.userStore.update(user._id, { isActive: false });
-      if (user.isActive == false || shop?.sellerId == userId) {
-        await this.shopStore.update(shop._id, { isActive: false });
-      }
+      //check valid seller exist in shop database
+      shop = await this.shopStore.getByAttributes({ sellerId: userId });
     } catch (e) {
       console.error(e);
       response.status = STATUS_CODES.INTERNAL_SERVER_ERROR;
       response.error = toError(e.message);
       return response;
     }
+    try {
+      //check valid seller exist in book database
+      book = await this.bookStore.getByAttributes({ sellerId: userId });
+    } catch (e) {
+      console.error(e);
+      response.status = STATUS_CODES.INTERNAL_SERVER_ERROR;
+      response.error = toError(e.message);
+      return response;
+    }
+    try {
+      await this.userStore.update(user._id, { isActive: false });
+    } catch (e) {
+      console.error(e);
+      response.status = STATUS_CODES.INTERNAL_SERVER_ERROR;
+      response.error = toError(e.message);
+      return response;
+    }
+    if (user?.isActive == false || shop?.sellerId == userId) {
+      try {
+        await this.shopStore.update(shop._id, { isActive: false });
+      } catch (e) {
+        console.error(e);
+        response.status = STATUS_CODES.INTERNAL_SERVER_ERROR;
+        response.error = toError(e.message);
+        return response;
+      }
+    }
 
+    if (shop?.isActive == false || book?.sellerId == userId) {
+      try {
+        await this.bookStore.updateAllBooks(book.sellerId, {
+          isDeleted: true,
+        });
+      } catch (e) {
+        console.error(e);
+        response.status = STATUS_CODES.INTERNAL_SERVER_ERROR;
+        response.error = toError(e.message);
+        return response;
+      }
+    }
     response.status = STATUS_CODES.OK;
     response.success = true;
     return response;

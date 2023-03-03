@@ -27,7 +27,7 @@ export default {
       return response?.book;
     },
 
-    async getAllBooks(parent, args, context) {
+    async getAllBooks(parent, args) {
         const { shopId } = args;
         const request: IBookService.IGetBookRequest = {
           shopId
@@ -86,10 +86,10 @@ export default {
       useAuthValidator(context);
       const {id} = context.req.user
       const {
-        book: { _id},
+       bookId,
       } = args;
       const request: IBookService.IDeleteBookRequest = {
-        _id,
+        bookId,
         userId:id
       };
       let response: IBookService.IDeleteBookResponse;

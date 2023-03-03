@@ -37,10 +37,10 @@ export interface IGetBookResponse extends IResponse {
 }
 
 /********************************************************************************
- * Delete Shop
+ * Delete Book
  ********************************************************************************/
  export interface IDeleteBookRequest {
-  _id?: string;
+  bookId?: string;
   userId: string
 }
 

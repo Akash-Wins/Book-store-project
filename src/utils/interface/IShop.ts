@@ -5,5 +5,6 @@ export default interface IShop{
   sellerId?: string;
   shopName: string;
   address: string;
+  isActive?: boolean;
   meta?:IMetaData;
 }

@@ -7,6 +7,5 @@ export default interface IUser {
   role?: string;
   isActive?: boolean
   isVerified?: boolean;
-  otp?: number
   meta?:IMetaData
 }

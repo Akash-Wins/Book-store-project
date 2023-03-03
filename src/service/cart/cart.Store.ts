@@ -1,6 +1,7 @@
 import ICart from "../../utils/interface/ICart";
 import { Document, Schema, Model, model } from "mongoose";
 import CartMongo from "../../models/cart.model";
+import { DeleteResult } from "mongodb";
 
 export interface ICartModel extends ICart, Document {
   _id: string;
@@ -18,7 +19,7 @@ export default class CartStore {
   /**
    * creating new cart and saving in Database
    */
-  async createCart(cartInput: ICart): Promise<ICart> {
+  async createCart(cartInput: ICart) {
     const cart = new Cart(cartInput);
     let savedCart
     try {
@@ -32,9 +33,9 @@ export default class CartStore {
   /**
    *Delete Cart
    */
-   public async delete(_id: string): Promise<any> {
+   public async delete(_id: string):Promise<DeleteResult> {
     try {
-      return await Cart.deleteOne({ _id });
+      return await Cart.deleteOne({ _id }).lean();
     } catch (e) {
       return Promise.reject(new CartStore.OPERATION_UNSUCCESSFUL());
     }
@@ -43,7 +44,7 @@ export default class CartStore {
   /**
    * Get Cart list
    */
-   public async getAll(shopId: string): Promise<ICart> {
+   public async getAll(shopId: string) {
     let cart;
     try {
       cart = await Cart.find({ shopId },).lean();
@@ -56,7 +57,7 @@ export default class CartStore {
   /**
    *Get by attributes in object form
    */
-  public async getByAttributes(attributes: object): Promise<ICart> {
+  public async getByAttributes(attributes: object) {
     try {
       return await Cart.findOne(attributes).lean();
     } catch (e) {
@@ -67,11 +68,11 @@ export default class CartStore {
   /**
    * updating Cart
    */
-  public async update(_id: string,attributes: object): Promise<ICart> {
+  public async update(_id: string,attributes: object) {
     try {
       const updateCart = await Cart.findByIdAndUpdate(
         { _id },
-        { $set: attributes },
+        attributes,
         { upsert: true, new: true }
       ).lean();
       return updateCart;

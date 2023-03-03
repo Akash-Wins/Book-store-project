@@ -8,7 +8,7 @@ import { useAuthValidator } from "../../utils/middlewares/useauthvalidator";
 export default {
   Query: {
     async getCart(parent, args, context) {
-      useAuthValidator(context);  
+      useAuthValidator(context);
       const { _id } = args;
       const request: ICartService.IGetCartRequest = {
         _id,
@@ -29,46 +29,47 @@ export default {
     },
 
     async getAllCart(parent, args, context) {
-        useAuthValidator(context);  
-        const { id } = context.req.user;
-        const { shopId } = args;
-        const request: ICartService.IGetCartRequest = {
-          shopId,
-          sellerId:id
-        };
-        let response: ICartService.IGetCartResponse;
-      
-        try {
-          response = await proxy.cart.getAllCart(request);
-          if (response.status !== STATUS_CODES.OK) {
-            throw new ApolloError(
-              response.error.message,
-              response.status.toString()
-            );
-          }
-        } catch (e) {
-          throw e;
+      useAuthValidator(context);
+      const { id } = context.req.user;
+      const { shopId } = args;
+      const request: ICartService.IGetCartRequest = {
+        shopId,
+        sellerId: id,
+      };
+      let response: ICartService.IGetCartResponse;
+
+      try {
+        response = await proxy.cart.getAllCart(request);
+        if (response.status !== STATUS_CODES.OK) {
+          throw new ApolloError(
+            response.error.message,
+            response.status.toString()
+          );
         }
-        return response.cart;
-      },  
+      } catch (e) {
+        throw e;
+      }
+      return response.cart;
+    },
   },
 
   Mutation: {
-    async registerCart(parent, args,context) {
-      useAuthValidator(context);  
+    async registerCart(parent, args, context) {
+      useAuthValidator(context);
       const { id } = context.req.user;
       const {
-        cart: { bookId, shopId, quantity },
+        cart: { bookId, shopId, quantity, total },
       } = args;
 
       const request: ICartService.IRegisterCartRequest = {
         bookId,
-        quantity, 
+        total,
+        quantity,
         shopId,
-        buyerId:id
+        buyerId: id,
       };
 
-      let response: ICartService.IRegisterCartResponse
+      let response: ICartService.IRegisterCartResponse;
 
       try {
         response = await proxy.cart.createCart(request);
@@ -84,15 +85,40 @@ export default {
       return response.cart;
     },
 
+    async updateCart(parent, args, context) {
+      useAuthValidator(context);
+      const { id } = context.req.user;
+
+      const request: ICartService.IUpdateCartRequest = {
+        buyerId: id,
+        ...args.cart,
+      };
+
+      let response: ICartService.IUpdateCartResponse;
+
+      try {
+        response = await proxy.cart.update(request);
+
+        if (response.status !== STATUS_CODES.OK) {
+          throw new ApolloError(
+            response.error.message,
+            response.status.toString()
+          );
+        }
+      } catch (e) {
+        throw e;
+      }
+
+      return response.cart;
+    },
+
     async deleteCart(parent, args, context) {
       useAuthValidator(context);
-      const {id} = context.req.user
-      const {
-         cartId
-      } = args;
+      const { id } = context.req.user;
+      const { cartId } = args;
       const request: ICartService.IDeleteCartRequest = {
         cartId,
-        buyerId:id
+        buyerId: id,
       };
       let response: ICartService.IDeleteCartResponse;
       try {

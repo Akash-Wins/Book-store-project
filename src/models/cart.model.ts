@@ -11,17 +11,40 @@ export default {
     type: String,
     required: false,
   },
-  shopId: {
-    type: String,
-    required: false,
-  },
-  bookId:{
-    type: String,
-    required: false,
-  },
-  quantity:{
+  total:{
     type: Number,
-    required:false
+    required: false,
   },
+  products: [
+    {
+      _id:{
+        type: String,
+        required: false,
+      },
+      bookId: String,
+      shopId: String,
+      quantity: Number,
+      rate: Number,
+      amount: Number,
+    }
+  ],
   meta:MetaData
+  // shopId: {
+  //   type: String,
+  //   required: false,
+  // },
+  // bookId:{
+  //   type: String,
+  //   required: false,
+  // },
+  // quantity:{
+  //   type: Number,
+  //   required:false
+  // },
+  // totalPrice:{
+  //   type: Number,
+  //   required:false
+  //
+ 
 };
+

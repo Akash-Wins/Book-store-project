@@ -7,31 +7,6 @@ import { useAuthValidator } from "../../utils/middlewares/useauthvalidator";
 
 export default {
   Query: {
-    async login(parents, args) {
-      const { email } = args;
-      const request: IUserService.ILoginUserRequest = {
-        email,
-      };
-
-      let response: IUserService.ILoginUserResponse = {
-        status: STATUS_CODES.UNKNOWN_CODE,
-        message:""
-      };
-
-      try {
-        response = await proxy.user.login(request);
-        if (response.status !== STATUS_CODES.OK) {
-          throw new ApolloError(
-            response.error.message,
-            response.status.toString()
-          );
-        }
-      } catch (e) {
-        throw e;
-      }
-      return response;
-    },
-
     async getUser(parent, args) {
       const { _id } = args;
 
@@ -72,6 +47,31 @@ export default {
       try {
         response = await proxy.user.createUser(request);
 
+        if (response.status !== STATUS_CODES.OK) {
+          throw new ApolloError(
+            response.error.message,
+            response.status.toString()
+          );
+        }
+      } catch (e) {
+        throw e;
+      }
+      return response;
+    },
+
+    async login(parents, args) {
+      const { email } = args;
+      const request: IUserService.ILoginUserRequest = {
+        email,
+      };
+
+      let response: IUserService.ILoginUserResponse = {
+        status: STATUS_CODES.UNKNOWN_CODE,
+        message:""
+      };
+
+      try {
+        response = await proxy.user.login(request);
         if (response.status !== STATUS_CODES.OK) {
           throw new ApolloError(
             response.error.message,

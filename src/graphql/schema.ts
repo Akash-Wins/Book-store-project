@@ -8,7 +8,7 @@ import { merge } from "lodash";
 
 const typeDefs = gql`
   ######################################################################
-  # Role 
+  # Role
   ######################################################################
 
   enum Role {
@@ -29,8 +29,9 @@ const typeDefs = gql`
   ######################################################################
   # User
   ######################################################################
-  
+
   type User {
+    _id: String
     firstName: String
     lastName: String
     email: String
@@ -72,6 +73,7 @@ const typeDefs = gql`
   ######################################################################
 
   type Book {
+    _id: String
     bookName: String
     price: Int
     quantity: Int
@@ -91,13 +93,21 @@ const typeDefs = gql`
   ######################################################################
 
   type Cart {
+    _id: String
+    buyerId: String
+    total: Int
+    products: [Products]
+  }
+  type Products {
     bookId: String
-    price: Int
-    quantity: Int
     shopId: String
+    quantity: Int
+    rate: Int
+    amount: Int
   }
 
   input CartInput {
+    cartId: String
     quantity: Int
     shopId: String
     bookId: String
@@ -110,11 +120,10 @@ const typeDefs = gql`
   type Query {
     #User
     getUser(_id: String!): User
-    login(email: String): Status
 
     #Book
     getBook(_id: String!): Book
-    getAllBooks(shopId: String!):[Book]
+    getAllBooks(shopId: String!): [Book]
 
     #Shop
     getShop(_id: String!): Shop
@@ -122,12 +131,13 @@ const typeDefs = gql`
 
     #Cart
     getCart(_id: String!): Cart
-    getAllCart(shopId: String!):[Cart]
+    getAllCart(shopId: String!): [Cart]
   }
 
   type Mutation {
     #User
     registerUser(user: UserInput): Authentication
+    login(email: String): Status
     verifyEmail(user: UserInput): Authentication
     updateUser(user: UserInput): User
     deleteUser: Status
@@ -139,10 +149,11 @@ const typeDefs = gql`
 
     #Book
     registerBook(book: BookInput): Book
-    deleteBook(book: BookInput): Status
+    deleteBook(bookId: String): Status
 
     #Cart
     registerCart(cart: CartInput): Cart
+    updateCart(cart: CartInput): Cart
     deleteCart(cartId: String): Status
   }
 `;
@@ -151,9 +162,8 @@ export const resolvers = merge(
   userResolvers,
   shopResolvers,
   bookResolvers,
-  cartResolvers,
-
-  );
+  cartResolvers
+);
 export const executableSchema = makeExecutableSchema({
   resolvers: { ...resolvers },
   typeDefs,
