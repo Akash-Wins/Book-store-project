@@ -27,6 +27,26 @@ export default {
       }
       return response?.user;
     },
+    async getAllDetails(parent, args, context) {
+      useAuthValidator(context);
+      const { id } = context.req.user;
+      const request: IUserService.IGetUserRequest = {
+        _id: id,
+      };
+      let response: IUserService.IGetUserResponse;
+      try {
+        response = await proxy.user.getAllDetails(request);
+        if (response.status !== STATUS_CODES.OK) {
+          throw new ApolloError(
+            response.error.message,
+            response.status.toString()
+          );
+        }
+      } catch (e) {
+        throw e;
+      }
+      return response?.users;
+    },
   },
 
   Mutation: {
@@ -67,7 +87,7 @@ export default {
 
       let response: IUserService.ILoginUserResponse = {
         status: STATUS_CODES.UNKNOWN_CODE,
-        message:""
+        message: "",
       };
 
       try {
@@ -85,11 +105,11 @@ export default {
     },
 
     async verifyEmail(parent, args) {
-      const { email , verifyEmailCode } = args.user;
+      const { email, verifyEmailCode } = args.user;
 
       const request: IUserService.IVerifyUserEmailRequest = {
         email,
-        verifyEmailCode
+        verifyEmailCode,
       };
 
       let response: IUserService.IVerifyUserEmailResponse;
@@ -139,9 +159,9 @@ export default {
 
     async deleteUser(parent, args, context) {
       useAuthValidator(context);
-      const {id} = context.req.user
+      const { id } = context.req.user;
       const request: IUserService.IDeleteUserRequest = {
-        userId:id
+        userId: id,
       };
       let response: IUserService.IDeleteUserResponse;
       try {

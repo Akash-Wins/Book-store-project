@@ -20,9 +20,9 @@ export default class BookStore {
    */
   async createBook(bookInput: IBook): Promise<IBook> {
     const book = new Book(bookInput);
-    let savedBook
+    let savedBook;
     try {
-        savedBook = await book.save();
+      savedBook = await book.save();
     } catch (error) {
       return error;
     }
@@ -32,29 +32,28 @@ export default class BookStore {
   /**
    * Get book list
    */
-   public async getAll(shopId: string): Promise<IBook> {
+  public async getAll(shopId: string): Promise<IBook> {
     let book;
     try {
-        book = await Book.find({ shopId },).lean();
+      book = await Book.find({ shopId }).lean();
     } catch (e) {
       return Promise.reject(new BookStore.OPERATION_UNSUCCESSFUL());
     }
     return book;
   }
 
-    /**
+  /**
    * Get book list
    */
-    public async getAllBook(sellerId:string): Promise<IBook> {
-      let book;
-      try {
-          book = await Book.find({ sellerId },).lean();
-      } catch (e) {
-        return Promise.reject(new BookStore.OPERATION_UNSUCCESSFUL());
-      }
-      return book;
+  public async getAllBook(sellerId: string): Promise<IBook> {
+    let book;
+    try {
+      book = await Book.find({ sellerId }).lean();
+    } catch (e) {
+      return Promise.reject(new BookStore.OPERATION_UNSUCCESSFUL());
     }
-
+    return book;
+  }
 
   /**
    *Get by attributes in object form
@@ -70,7 +69,7 @@ export default class BookStore {
   /**
    * updating book
    */
-  public async update(_id: string,attributes: object): Promise<IBook> {
+  public async update(_id: string, attributes: object): Promise<IBook> {
     try {
       const updateBook = await Book.findByIdAndUpdate(
         { _id },
@@ -83,10 +82,13 @@ export default class BookStore {
     }
   }
 
-   /**
+  /**
    * updating many books
    */
-   public async updateAllBooks(sellerId: string,attributes: object): Promise<any> {
+  public async updateAllBooks(
+    sellerId: string,
+    attributes: object
+  ): Promise<any> {
     try {
       const updateBooks = await Book.updateMany(
         { sellerId },

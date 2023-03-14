@@ -21,9 +21,9 @@ export default class CartStore {
    */
   async createCart(cartInput: ICart) {
     const cart = new Cart(cartInput);
-    let savedCart
+    let savedCart;
     try {
-        savedCart = await cart.save();
+      savedCart = await cart.save();
     } catch (error) {
       return error;
     }
@@ -33,7 +33,7 @@ export default class CartStore {
   /**
    *Delete Cart
    */
-   public async delete(_id: string):Promise<DeleteResult> {
+  public async delete(_id: string): Promise<DeleteResult> {
     try {
       return await Cart.deleteOne({ _id }).lean();
     } catch (e) {
@@ -44,10 +44,10 @@ export default class CartStore {
   /**
    * Get Cart list
    */
-   public async getAll(shopId: string) {
+  public async getAll(shopId: any) {
     let cart;
     try {
-      cart = await Cart.find({ shopId },).lean();
+      cart = await Cart.find({ shopId }).lean();
     } catch (e) {
       return Promise.reject(new CartStore.OPERATION_UNSUCCESSFUL());
     }
@@ -68,13 +68,12 @@ export default class CartStore {
   /**
    * updating Cart
    */
-  public async update(_id: string,attributes: object) {
+  public async update(_id: string, attributes: object) {
     try {
-      const updateCart = await Cart.findByIdAndUpdate(
-        { _id },
-        attributes,
-        { upsert: true, new: true }
-      ).lean();
+      const updateCart = await Cart.findByIdAndUpdate({ _id }, attributes, {
+        upsert: true,
+        new: true,
+      }).lean();
       return updateCart;
     } catch (e) {
       return Promise.reject(new CartStore.OPERATION_UNSUCCESSFUL());

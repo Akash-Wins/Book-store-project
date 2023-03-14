@@ -44,6 +44,28 @@ export default {
       }
       return response.shop;
     },
+
+    async getSellerAllShops(parent, args, context) {
+      useAuthValidator(context);
+      const { id } = context.req.user;
+      const request: IShopService.IGetShopRequest = {
+        sellerId: id,
+      };
+      let response: IShopService.IGetShopResponse;
+
+      try {
+        response = await proxy.shop.getSellerAllShops(request);
+        if (response.status !== STATUS_CODES.OK) {
+          throw new ApolloError(
+            response.error.message,
+            response.status.toString()
+          );
+        }
+      } catch (e) {
+        throw e;
+      }
+      return response?.shop;
+    },
   },
 
   Mutation: {
@@ -78,40 +100,38 @@ export default {
     },
 
     async updateShop(parent, args, context) {
-        useAuthValidator(context);
-        const { id } = context.req.user;
-    
-        const request: IShopService.IUpdateShopRequest = {
-          sellerId: id,
-          ...args.shop,
-        };
-    
-        let response: IShopService.IUpdateShopResponse;
-    
-        try {
-          response = await proxy.shop.update(request);
-    
-          if (response.status !== STATUS_CODES.OK) {
-            throw new ApolloError(
-              response.error.message,
-              response.status.toString()
-            );
-          }
-        } catch (e) {
-          throw e;
+      useAuthValidator(context);
+      const { id } = context.req.user;
+
+      const request: IShopService.IUpdateShopRequest = {
+        sellerId: id,
+        ...args.shop,
+      };
+
+      let response: IShopService.IUpdateShopResponse;
+
+      try {
+        response = await proxy.shop.update(request);
+
+        if (response.status !== STATUS_CODES.OK) {
+          throw new ApolloError(
+            response.error.message,
+            response.status.toString()
+          );
         }
-        return response.shop;
-      },
+      } catch (e) {
+        throw e;
+      }
+      return response.shop;
+    },
 
     async deleteShop(parent, args, context) {
       useAuthValidator(context);
-      const {id} = context.req.user
-      const {
-        shopId
-       } = args;
+      const { id } = context.req.user;
+      const { shopId } = args;
       const request: IShopService.IDeleteShopRequest = {
         shopId,
-        sellerId:id,
+        sellerId: id,
       };
       let response: IShopService.IDeleteShopResponse;
 
@@ -124,11 +144,10 @@ export default {
           );
         }
       } catch (e) {
-        console.log(e)
+        console.log(e);
         throw e;
       }
       return response;
     },
   },
 };
-

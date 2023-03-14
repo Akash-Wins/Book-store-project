@@ -96,18 +96,18 @@ export default class UserService implements IUserService.IUserServiceAPI {
     let user: IUser;
     try {
       user = await this.userStore.createUser(attributes);
-      if (user) {
-        if (role == Role.BUYER) {
-          try {
-            await this.proxy.cart.createCart({ buyerId: user?._id });
-          } catch (e) {
-            console.error(e);
-            response.status = STATUS_CODES.INTERNAL_SERVER_ERROR;
-            response.error = toError(e.message);
-            return response;
-          }
-        }
-      }
+      // if (user) {
+      //   if (role == Role.BUYER) {
+      //     try {
+      //       await this.proxy.cart.createCart({ buyerId: user?._id });
+      //     } catch (e) {
+      //       console.error(e);
+      //       response.status = STATUS_CODES.INTERNAL_SERVER_ERROR;
+      //       response.error = toError(e.message);
+      //       return response;
+      //     }
+      //   }
+      // }
     } catch (e) {
       console.error(e);
       response.status = STATUS_CODES.INTERNAL_SERVER_ERROR;
@@ -155,7 +155,7 @@ export default class UserService implements IUserService.IUserServiceAPI {
       });
       if (!emailCheck) {
         response.status = STATUS_CODES.BAD_REQUEST;
-        const errorMsg = ErrorMessageEnum.INVALID_CREDENTIALS;
+        const errorMsg = ErrorMessageEnum.PLEASE_ENTER_VALID_OTP;
         response.error = toError(errorMsg);
         response.verified = false;
         return response;
@@ -219,7 +219,7 @@ export default class UserService implements IUserService.IUserServiceAPI {
 
       //if credentials are incorrect
       if (!user || user.isActive == false) {
-        const errorMsg = ErrorMessageEnum.INVALID_CREDENTIALS;
+        const errorMsg = ErrorMessageEnum.PLEASE_ENTER_VALID_EMAIL;
         response.status = STATUS_CODES.UNAUTHORIZED;
         response.error = toError(errorMsg);
         return response;
@@ -344,7 +344,7 @@ export default class UserService implements IUserService.IUserServiceAPI {
 
     let user: IUser;
     try {
-      user = await this.userStore.getByAttributes({ _id });
+      user = await this.userStore.getByAttributes({ _id: _id });
       //if user's id is incorrect
       if (!user) {
         const errorMsg = ErrorMessageEnum.INVALID_USER_ID;
@@ -443,6 +443,7 @@ export default class UserService implements IUserService.IUserServiceAPI {
       return response;
     }
     try {
+      //user soft deleted
       await this.userStore.update(user._id, { isActive: false });
     } catch (e) {
       console.error(e);
@@ -450,6 +451,7 @@ export default class UserService implements IUserService.IUserServiceAPI {
       response.error = toError(e.message);
       return response;
     }
+    //check if user delete then its own shop will be automatically deleted
     if (user?.isActive == false || shop?.sellerId == userId) {
       try {
         await this.shopStore.update(shop._id, { isActive: false });
@@ -460,7 +462,7 @@ export default class UserService implements IUserService.IUserServiceAPI {
         return response;
       }
     }
-
+    //check if user shop is deleted then consist of all book deleted
     if (shop?.isActive == false || book?.sellerId == userId) {
       try {
         await this.bookStore.updateAllBooks(book.sellerId, {
@@ -475,6 +477,51 @@ export default class UserService implements IUserService.IUserServiceAPI {
     }
     response.status = STATUS_CODES.OK;
     response.success = true;
+    return response;
+  };
+
+  /**
+   * Get shop by Id
+   */
+  public getAllDetails = async (
+    request: IUserService.IGetUserRequest
+  ): Promise<IUserService.IGetUserResponse> => {
+    const response: IUserService.IGetUserResponse = {
+      status: STATUS_CODES.UNKNOWN_CODE,
+    };
+
+    const schema = Joi.object().keys({
+      _id: Joi.string().required(),
+    });
+
+    const params = schema.validate(request);
+
+    if (params.error) {
+      console.error(params.error);
+      response.status = STATUS_CODES.UNPROCESSABLE_ENTITY;
+      response.error = toError(params.error.details[0].message);
+      return response;
+    }
+
+    const { _id } = params.value;
+    let user: IUser[];
+    try {
+      user = await this.userStore.getAllDetails(_id);
+      //if shop's id is incorrect
+      if (user[0].role == Role.BUYER) {
+        const errorMsg = ErrorMessageEnum.INVALID_CREDENTIALS;
+        response.status = STATUS_CODES.BAD_REQUEST;
+        response.error = toError(errorMsg);
+        return response;
+      }
+    } catch (e) {
+      console.error(e);
+      response.status = STATUS_CODES.INTERNAL_SERVER_ERROR;
+      response.error = toError(e.message);
+      return response;
+    }
+    response.status = STATUS_CODES.OK;
+    response.users = user;
     return response;
   };
 }

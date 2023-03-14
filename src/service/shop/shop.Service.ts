@@ -32,7 +32,7 @@ export default class ShopService implements IShopService.IShopServiceAPI {
     const schema = Joi.object().keys({
       shopName: Joi.string().required(),
       address: Joi.string().optional(),
-      sellerId: Joi.string().required()
+      sellerId: Joi.string().required(),
     });
 
     const params = schema.validate(request);
@@ -47,30 +47,11 @@ export default class ShopService implements IShopService.IShopServiceAPI {
 
     let userCheck: IUser;
     try {
-      userCheck = await this.userStore.getByAttributes({ _id:sellerId });
+      userCheck = await this.userStore.getByAttributes({ _id: sellerId });
 
       //role check only seller can create shop
-      if (userCheck.role!== Role.SELLER || userCheck.isActive == false) {
+      if (userCheck.role !== Role.SELLER || userCheck.isActive == false) {
         const errorMsg = ErrorMessageEnum.INVALID_CREDENTIALS;
-        response.status = STATUS_CODES.BAD_REQUEST;
-        response.error = toError(errorMsg);
-        return response;
-      }
-    } catch (e) {
-      console.error(e);
-      response.status = STATUS_CODES.INTERNAL_SERVER_ERROR;
-      response.error = toError(e.message);
-      return response;
-    }
-
-    // Check if shopName is already registered
-    let existingShop: IShop;
-    try {
-      existingShop = await this.shopStore.getByAttributes({ shopName });
-
-      //Error if shop is already exist
-      if (existingShop && existingShop?.shopName) {
-        const errorMsg = ErrorMessageEnum.SHOP_ALREADY_EXIST;
         response.status = STATUS_CODES.BAD_REQUEST;
         response.error = toError(errorMsg);
         return response;
@@ -87,10 +68,10 @@ export default class ShopService implements IShopService.IShopServiceAPI {
       shopName,
       address,
       sellerId,
-      meta:{
-        createdAt:Date.now(),
-        createdBy:sellerId
-      }
+      meta: {
+        createdAt: Date.now(),
+        createdBy: sellerId,
+      },
     };
 
     let shop: IShop;
@@ -158,27 +139,65 @@ export default class ShopService implements IShopService.IShopServiceAPI {
    * Get All Shops
    */
   public getAllShops = async (
-      request: IShopService.IGetShopRequest
-    ): Promise<IShopService.IGetShopResponse> => {
-      const response: IShopService.IGetShopResponse = {
-        status: STATUS_CODES.UNKNOWN_CODE,
-      };
-    
-      let shop:IShop;
-      // check exist shop in database
-      try {
-        shop = await this.shopStore.getAll();
-      } catch (e) {
-        console.error(e);
-        response.status = STATUS_CODES.INTERNAL_SERVER_ERROR;
-        response.error = toError(e.message);
-        return response;
-      }
-      response.status = STATUS_CODES.OK;
-      response.shop = shop;
-      return response;
+    request: IShopService.IGetShopRequest
+  ): Promise<IShopService.IGetShopResponse> => {
+    const response: IShopService.IGetShopResponse = {
+      status: STATUS_CODES.UNKNOWN_CODE,
     };
-    
+
+    let shop: IShop;
+    // check exist shop in database
+    try {
+      shop = await this.shopStore.getAll();
+    } catch (e) {
+      console.error(e);
+      response.status = STATUS_CODES.INTERNAL_SERVER_ERROR;
+      response.error = toError(e.message);
+      return response;
+    }
+    response.status = STATUS_CODES.OK;
+    response.shop = shop;
+    return response;
+  };
+
+  /**
+   * Get single user All Shops
+   */
+  public getSellerAllShops = async (
+    request: IShopService.IGetShopRequest
+  ): Promise<IShopService.IGetShopResponse> => {
+    const response: IShopService.IGetShopResponse = {
+      status: STATUS_CODES.UNKNOWN_CODE,
+    };
+    const schema = Joi.object().keys({
+      sellerId: Joi.string().required(),
+    });
+
+    const params = schema.validate(request);
+
+    if (params.error) {
+      console.error(params.error);
+      response.status = STATUS_CODES.UNPROCESSABLE_ENTITY;
+      response.error = toError(params.error.details[0].message);
+      return response;
+    }
+    const { sellerId } = params.value;
+
+    let shop: IShop;
+    // check exist shop in database
+    try {
+      shop = await this.shopStore.getSellerAllShops(sellerId);
+    } catch (e) {
+      console.error(e);
+      response.status = STATUS_CODES.INTERNAL_SERVER_ERROR;
+      response.error = toError(e.message);
+      return response;
+    }
+    response.status = STATUS_CODES.OK;
+    response.shop = shop;
+    return response;
+  };
+
   /**
    * Update Shop
    */
@@ -204,14 +223,17 @@ export default class ShopService implements IShopService.IShopServiceAPI {
       response.error = toError(params.error.details[0].message);
       return response;
     }
-    const { shopName, address, _id , sellerId} = params.value;
+    const { shopName, address, _id, sellerId } = params.value;
 
     let shop: IShop;
     let user: IUser;
     try {
       //check exist shop in database
       try {
-        shop = await this.shopStore.getByAttributes({ _id,sellerId:sellerId });
+        shop = await this.shopStore.getByAttributes({
+          _id,
+          sellerId: sellerId,
+        });
       } catch (e) {
         console.error(e);
         response.status = STATUS_CODES.INTERNAL_SERVER_ERROR;
@@ -220,7 +242,7 @@ export default class ShopService implements IShopService.IShopServiceAPI {
       }
       //check exist seller in databse
       try {
-        user = await this.userStore.getByAttributes({_id:sellerId});
+        user = await this.userStore.getByAttributes({ _id: sellerId });
       } catch (e) {
         console.error(e);
         response.status = STATUS_CODES.INTERNAL_SERVER_ERROR;
@@ -246,10 +268,10 @@ export default class ShopService implements IShopService.IShopServiceAPI {
     const attributes: IShop = {
       shopName,
       address,
-      meta:{
-        updatedAt:Date.now(),
-        updatedBy:sellerId
-      }
+      meta: {
+        updatedAt: Date.now(),
+        updatedBy: sellerId,
+      },
     };
 
     try {
@@ -286,12 +308,15 @@ export default class ShopService implements IShopService.IShopServiceAPI {
       response.error = toError(params.error.details[0].message);
       return response;
     }
-    const { shopId ,sellerId} = params.value;
+    const { shopId, sellerId } = params.value;
 
     //exists shop
     let shop;
     try {
-      shop = await this.shopStore.getByAttributes({_id: shopId, sellerId:sellerId});  
+      shop = await this.shopStore.getByAttributes({
+        _id: shopId,
+        sellerId: sellerId,
+      });
 
       // check for shop exist
       if (!shop) {
@@ -312,7 +337,7 @@ export default class ShopService implements IShopService.IShopServiceAPI {
       response.error = toError(errorMsg);
       return response;
     }
-    
+
     try {
       shop = await this.shopStore.update(shop._id, { isActive: false });
     } catch (e) {
@@ -325,5 +350,4 @@ export default class ShopService implements IShopService.IShopServiceAPI {
     response.success = true;
     return response;
   };
-
 }

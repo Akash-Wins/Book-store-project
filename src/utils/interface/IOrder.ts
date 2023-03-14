@@ -8,21 +8,13 @@ export interface carts {
   amount?: number;
   total?: number;
 }
-// export default interface ICart{
-//     _id?: string;
-//     // bookId?: string
-//     buyerId?: string;
-//     shopId?: string;
-//     // quantity: number;
-//     totalPrice: number;
-//     meta?:IMetaData;
-//     products: Array<carts>;
-// }
 
-export default interface ICart {
+export default interface IOrder {
   _id?: string;
   buyerId?: string;
   total?: number;
   meta?: IMetaData;
+  cartId?: string;
+  orderStatus?: string;
   products?: Array<carts>;
 }

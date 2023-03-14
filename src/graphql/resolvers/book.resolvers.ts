@@ -28,45 +28,45 @@ export default {
     },
 
     async getAllBooks(parent, args) {
-        const { shopId } = args;
-        const request: IBookService.IGetBookRequest = {
-          shopId
-        };
-        let response: IBookService.IGetBookResponse;
-      
-        try {
-          response = await proxy.book.getAllBooks(request);
-          if (response.status !== STATUS_CODES.OK) {
-            throw new ApolloError(
-              response.error.message,
-              response.status.toString()
-            );
-          }
-        } catch (e) {
-          throw e;
+      const { shopId } = args;
+      const request: IBookService.IGetBookRequest = {
+        shopId,
+      };
+      let response: IBookService.IGetBookResponse;
+
+      try {
+        response = await proxy.book.getAllBooks(request);
+        if (response.status !== STATUS_CODES.OK) {
+          throw new ApolloError(
+            response.error.message,
+            response.status.toString()
+          );
         }
-        return response.book;
-      },  
+      } catch (e) {
+        throw e;
+      }
+      return response.book;
+    },
   },
 
   Mutation: {
-    async registerBook(parent, args,context) {
-      useAuthValidator(context);  
+    async registerBook(parent, args, context) {
+      useAuthValidator(context);
       const { id } = context.req.user;
-      
+
       const {
-        book: { bookName, shopId, price, quantity},
+        book: { bookName, shopId, price, quantity },
       } = args;
 
       const request: IBookService.IRegisterBookRequest = {
         bookName,
         price,
-        quantity, 
-        shopId:shopId,
-        sellerId:id
+        quantity,
+        shopId: shopId,
+        sellerId: id,
       };
 
-      let response: IBookService.IRegisterBookResponse
+      let response: IBookService.IRegisterBookResponse;
 
       try {
         response = await proxy.book.createBook(request);
@@ -82,15 +82,39 @@ export default {
       return response.book;
     },
 
+    async updateBook(parent, args, context) {
+      useAuthValidator(context);
+      const { id } = context.req.user;
+
+      const request: IBookService.IUpdateBookRequest = {
+        sellerId: id,
+        ...args.book,
+      };
+
+      let response: IBookService.IUpdateBookResponse;
+
+      try {
+        response = await proxy.book.update(request);
+
+        if (response.status !== STATUS_CODES.OK) {
+          throw new ApolloError(
+            response.error.message,
+            response.status.toString()
+          );
+        }
+      } catch (e) {
+        throw e;
+      }
+      return response.book;
+    },
+
     async deleteBook(parent, args, context) {
       useAuthValidator(context);
-      const {id} = context.req.user
-      const {
-       bookId,
-      } = args;
+      const { id } = context.req.user;
+      const { bookId } = args;
       const request: IBookService.IDeleteBookRequest = {
         bookId,
-        userId:id
+        userId: id,
       };
       let response: IBookService.IDeleteBookResponse;
       try {

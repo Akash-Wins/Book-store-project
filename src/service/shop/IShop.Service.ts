@@ -5,6 +5,7 @@ export interface IShopServiceAPI {
   createShop(request: IRegisterShopRequest): Promise<IRegisterShopResponse>;
   get(request: IGetShopRequest): Promise<IGetShopResponse>;
   getAllShops(request: IGetShopRequest): Promise<IGetShopResponse>;
+  getSellerAllShops(request: IGetShopRequest): Promise<IGetShopResponse>;
   update(request: IUpdateShopRequest): Promise<IUpdateShopResponse>;
   delete(request: IDeleteShopRequest): Promise<IDeleteShopResponse>;
 }
@@ -13,8 +14,8 @@ export interface IShopServiceAPI {
  *  Create Shop
  ********************************************************************************/
 export interface IRegisterShopRequest {
-  sellerId?: string; 
-  shopName: string; 
+  sellerId?: string;
+  shopName: string;
   address: string;
 }
 
@@ -28,6 +29,7 @@ export interface IRegisterShopResponse extends IResponse {
 
 export interface IGetShopRequest {
   _id?: string;
+  sellerId?: string;
 }
 export interface IGetShopResponse extends IResponse {
   shop?: IShop;
@@ -37,7 +39,7 @@ export interface IGetShopResponse extends IResponse {
  *  Update Shop
  ********************************************************************************/
 
- export interface IUpdateShopRequest {
+export interface IUpdateShopRequest {
   _id: string;
 }
 export interface IUpdateShopResponse extends IResponse {
@@ -47,9 +49,9 @@ export interface IUpdateShopResponse extends IResponse {
 /********************************************************************************
  * Delete Shop
  ********************************************************************************/
- export interface IDeleteShopRequest {
-  sellerId: string
-  shopId: string
+export interface IDeleteShopRequest {
+  sellerId: string;
+  shopId: string;
 }
 
 export interface IDeleteShopResponse extends IResponse {

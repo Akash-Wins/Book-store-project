@@ -9,7 +9,9 @@ enum ErrorMessageEnum {
   SHOP_ALREADY_EXIST = "Shop Already Exist",
   BOOK_ALREADY_EXIST = "Book Already Exist",
   INVALID_BOOK_ID = "Invalid Book Id",
-  INVALID_SHOP_ID = "Invalid shop Id"
+  INVALID_SHOP_ID = "Invalid shop Id",
+  PLEASE_ENTER_VALID_OTP = "Please enter valid otp",
+  PLEASE_ENTER_VALID_EMAIL = "Please enter valid email",
 }
 
 export default ErrorMessageEnum;

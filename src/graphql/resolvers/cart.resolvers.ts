@@ -54,16 +54,15 @@ export default {
   },
 
   Mutation: {
-    async registerCart(parent, args, context) {
+    async createCart(parent, args, context) {
       useAuthValidator(context);
       const { id } = context.req.user;
       const {
-        cart: { bookId, shopId, quantity, total },
+        cart: { bookId, shopId, quantity },
       } = args;
 
       const request: ICartService.IRegisterCartRequest = {
         bookId,
-        total,
         quantity,
         shopId,
         buyerId: id,
@@ -85,32 +84,32 @@ export default {
       return response.cart;
     },
 
-    async updateCart(parent, args, context) {
-      useAuthValidator(context);
-      const { id } = context.req.user;
+    // async updateCart(parent, args, context) {
+    //   useAuthValidator(context);
+    //   const { id } = context.req.user;
 
-      const request: ICartService.IUpdateCartRequest = {
-        buyerId: id,
-        ...args.cart,
-      };
+    //   const request: ICartService.IUpdateCartRequest = {
+    //     buyerId: id,
+    //     ...args.cart,
+    //   };
 
-      let response: ICartService.IUpdateCartResponse;
+    //   let response: ICartService.IUpdateCartResponse;
 
-      try {
-        response = await proxy.cart.update(request);
+    //   try {
+    //     response = await proxy.cart.update(request);
 
-        if (response.status !== STATUS_CODES.OK) {
-          throw new ApolloError(
-            response.error.message,
-            response.status.toString()
-          );
-        }
-      } catch (e) {
-        throw e;
-      }
+    //     if (response.status !== STATUS_CODES.OK) {
+    //       throw new ApolloError(
+    //         response.error.message,
+    //         response.status.toString()
+    //       );
+    //     }
+    //   } catch (e) {
+    //     throw e;
+    //   }
 
-      return response.cart;
-    },
+    //   return response.cart;
+    // },
 
     async deleteCart(parent, args, context) {
       useAuthValidator(context);

@@ -2,6 +2,7 @@ import userResolvers from "./resolvers/user.resolvers";
 import shopResolvers from "./resolvers/shop.resolvers";
 import bookResolvers from "./resolvers/book.resolvers";
 import cartResolvers from "./resolvers/cart.resolvers";
+import orderResolvers from "./resolvers/order.resolvers";
 import gql from "graphql-tag";
 import { makeExecutableSchema } from "@graphql-tools/schema";
 import { merge } from "lodash";
@@ -11,9 +12,21 @@ const typeDefs = gql`
   # Role
   ######################################################################
 
+  type Meta {
+    createdAt: Float
+    createdBy: String
+    updatedAt: Float
+    updatedBy: String
+  }
+
   enum Role {
     seller
     buyer
+  }
+
+  enum OrderStaus {
+    confirmed
+    canceled
   }
 
   ######################################################################
@@ -35,6 +48,8 @@ const typeDefs = gql`
     firstName: String
     lastName: String
     email: String
+    shops: Shop
+    meta: Meta
   }
 
   input UserInput {
@@ -43,6 +58,10 @@ const typeDefs = gql`
     lastName: String
     email: String
     role: Role
+  }
+
+  input VerifyEmailInput {
+    email: String
     verifyEmailCode: String
   }
 
@@ -60,6 +79,8 @@ const typeDefs = gql`
     shopName: String
     address: String
     sellerId: String
+    books: [Book]
+    meta: Meta
   }
 
   input ShopInput {
@@ -78,6 +99,7 @@ const typeDefs = gql`
     price: Int
     quantity: Int
     shopId: String
+    meta: Meta
   }
 
   input BookInput {
@@ -96,9 +118,13 @@ const typeDefs = gql`
     _id: String
     buyerId: String
     total: Int
+    orderStatus: OrderStaus
     products: [Products]
+    meta: Meta
   }
   type Products {
+    shopName: String
+    bookName: String
     bookId: String
     shopId: String
     quantity: Int
@@ -120,6 +146,7 @@ const typeDefs = gql`
   type Query {
     #User
     getUser(_id: String!): User
+    getAllDetails: [User]
 
     #Book
     getBook(_id: String!): Book
@@ -127,18 +154,23 @@ const typeDefs = gql`
 
     #Shop
     getShop(_id: String!): Shop
+    getSellerAllShops: [Shop]
     getAllShops: [Shop]
 
     #Cart
     getCart(_id: String!): Cart
     getAllCart(shopId: String!): [Cart]
+
+    #Order
+    getAllOrder(shopId: String!): [Cart]
+    getBuyerOrder: [Cart]
   }
 
   type Mutation {
     #User
     registerUser(user: UserInput): Authentication
     login(email: String): Status
-    verifyEmail(user: UserInput): Authentication
+    verifyEmail(user: VerifyEmailInput): Authentication
     updateUser(user: UserInput): User
     deleteUser: Status
 
@@ -149,12 +181,17 @@ const typeDefs = gql`
 
     #Book
     registerBook(book: BookInput): Book
+    updateBook(book: BookInput): Book
     deleteBook(bookId: String): Status
 
     #Cart
-    registerCart(cart: CartInput): Cart
+    createCart(cart: CartInput): Cart
     updateCart(cart: CartInput): Cart
     deleteCart(cartId: String): Status
+
+    #Order
+    createOrder(order: CartInput): Cart
+    cancelOrder(orderId: String): Status
   }
 `;
 
@@ -162,7 +199,8 @@ export const resolvers = merge(
   userResolvers,
   shopResolvers,
   bookResolvers,
-  cartResolvers
+  cartResolvers,
+  orderResolvers
 );
 export const executableSchema = makeExecutableSchema({
   resolvers: { ...resolvers },

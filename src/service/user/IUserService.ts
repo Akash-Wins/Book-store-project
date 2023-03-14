@@ -3,11 +3,14 @@ import { IResponse } from "../../utils/interface/common";
 
 export interface IUserServiceAPI {
   createUser(request: IRegisterUserRequest): Promise<IRegisterUserResponse>;
-  verifyEmail(request: IVerifyUserEmailRequest): Promise<IVerifyUserEmailResponse>;
+  verifyEmail(
+    request: IVerifyUserEmailRequest
+  ): Promise<IVerifyUserEmailResponse>;
   login(request: ILoginUserRequest): Promise<ILoginUserResponse>;
   get(request: IGetUserRequest): Promise<IGetUserResponse>;
   update(request: IUpdateUserRequest): Promise<IUpdateUserResponse>;
   delete(request: IDeleteUserRequest): Promise<IDeleteUserResponse>;
+  getAllDetails(request: IGetUserRequest): Promise<IGetUserResponse>;
 }
 
 /********************************************************************************
@@ -27,9 +30,9 @@ export interface IRegisterUserResponse extends IResponse {
 /********************************************************************************
  *  Verify Email
  ********************************************************************************/
- export interface IVerifyUserEmailRequest {
+export interface IVerifyUserEmailRequest {
   verifyEmailCode: string;
-  email: string
+  email: string;
 }
 export interface IVerifyUserEmailResponse extends IResponse {
   verified?: boolean;
@@ -57,13 +60,14 @@ export interface IGetUserRequest {
 }
 export interface IGetUserResponse extends IResponse {
   user?: IUser;
+  users?: IUser[];
 }
 
 /********************************************************************************
  *  Update User
  ********************************************************************************/
 
- export interface IUpdateUserRequest {
+export interface IUpdateUserRequest {
   _id: string;
 }
 export interface IUpdateUserResponse extends IResponse {
@@ -73,15 +77,10 @@ export interface IUpdateUserResponse extends IResponse {
 /********************************************************************************
  * Delete User
  ********************************************************************************/
- export interface IDeleteUserRequest {
-  userId: string
+export interface IDeleteUserRequest {
+  userId: string;
 }
 
 export interface IDeleteUserResponse extends IResponse {
   success?: boolean;
 }
-
-
-
-
-

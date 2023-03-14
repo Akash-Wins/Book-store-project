@@ -20,7 +20,7 @@ export default class ShopStore {
    */
   async createShop(shopInput: IShop): Promise<IShop> {
     const shop = new Shop(shopInput);
-    let savedShop
+    let savedShop;
     try {
       savedShop = await shop.save();
     } catch (error) {
@@ -32,10 +32,23 @@ export default class ShopStore {
   /**
    * Get Shop list
    */
-   public async getAll(): Promise<IShop> {
+  public async getAll(): Promise<IShop> {
     let shop;
     try {
-        shop = await Shop.find().lean();
+      shop = await Shop.find().lean();
+    } catch (e) {
+      return Promise.reject(new ShopStore.OPERATION_UNSUCCESSFUL());
+    }
+    return shop;
+  }
+
+  /**
+   * Get seller Shop list
+   */
+  public async getSellerAllShops(sellerId: string): Promise<IShop> {
+    let shop;
+    try {
+      shop = await Shop.find({ sellerId }).lean();
     } catch (e) {
       return Promise.reject(new ShopStore.OPERATION_UNSUCCESSFUL());
     }
@@ -44,7 +57,7 @@ export default class ShopStore {
 
   /**
    *Get by attributes in object form
-   */
+   */ Shop;
   public async getByAttributes(attributes: object): Promise<IShop> {
     try {
       return await Shop.findOne(attributes).lean();
@@ -56,7 +69,7 @@ export default class ShopStore {
   /**
    * updating shop
    */
-  public async update(_id: string,attributes: object): Promise<IShop> {
+  public async update(_id: string, attributes: object): Promise<IShop> {
     try {
       const updateShop = await Shop.findByIdAndUpdate(
         { _id },
